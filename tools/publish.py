@@ -89,8 +89,17 @@ def main():
     except urllib.error.HTTPError as e:
         if e.code != 404:
             raise
-        api(f"/repos/{user}/{repo}/pages", token, "POST", {"build_type": "workflow"})
-        print("→ Pages включён (source: GitHub Actions)")
+        try:
+            api(f"/repos/{user}/{repo}/pages", token, "POST",
+                {"source": {"branch": "main", "path": "/"}})
+            print("→ Pages включён (source: branch main /)")
+        except urllib.error.HTTPError as e2:
+            if e2.code == 403:
+                print("→ НЕ хватает прав токена на Pages. Включи вручную (10 секунд):")
+                print(f"   https://github.com/{user}/{repo}/settings/pages")
+                print("   Source: Deploy from a branch → main, / (root) → Save")
+            else:
+                raise
 
     # 4. ждём деплой
     url = f"https://{user}.github.io/{repo}/"

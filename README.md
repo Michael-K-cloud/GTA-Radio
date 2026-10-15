@@ -28,14 +28,19 @@ python3 -m http.server 8000
 
 **Способ 3 — GitHub Pages** (см. ниже) — ссылка для друзей с телефона.
 
-## Публикация на GitHub Pages (5 минут)
+## Публикация на GitHub Pages
 
-1. Создай репозиторий, например `gta-radio`, загрузи туда содержимое этой папки.
-2. В репозитории уже лежит `.github/workflows/deploy.yml` — он сам соберёт Pages.
-3. На GitHub: **Settings → Pages → Source: GitHub Actions**.
-4. Сайт появится на `https://<твой-ник>.github.io/gta-radio/`.
+**Способ А — из ветки (рекомендуемый, не требует особых прав токена):**
+1. Залей содержимое папки в репозиторий (или `python3 tools/publish.py <файл-с-токеном>`).
+2. На GitHub: **Settings → Pages → Build and deployment → Source: Deploy from a branch**.
+3. Branch: `main`, папка `/ (root)` → **Save**.
+4. Через 1–2 минуты сайт на `https://<твой-ник>.github.io/<имя-репозитория>/`.
+   Каждое следующее изменение в `main` пересобирает сайт автоматически.
 
-Альтернатива без Actions: **Settings → Pages → Source: Deploy from a branch → branch: main, folder: / (root)**.
+**Способ Б — через GitHub Actions** (если хочется Actions): токен должен иметь
+права **Workflows: Read and write** (иначе GitHub отклонит пуш файлов `.github/workflows/`).
+Верни файл `.github/workflows/deploy.yml` из образца `tools/deploy-actions.yml.sample`,
+убери `.github/` из `.gitignore`, запушь и в **Settings → Pages** выбери **Source: GitHub Actions**.
 
 ## Куда положить музыку
 
