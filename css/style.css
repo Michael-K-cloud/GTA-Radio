@@ -1,0 +1,441 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Archivo+Black&family=Oswald:wght@500;700&display=swap");
+
+/* =========================================================================
+   GTA RADIO — общие стили
+   Темы игр подключаются классом на <body>: theme-v / theme-iv / theme-sa ...
+   ========================================================================= */
+
+:root{
+  --bg:#04060a;
+  --bg2:#0a0e14;
+  --fg:#eef2f7;
+  --muted:#8b96a7;
+  --accent:#7fd4ff;
+  --panel:rgba(10,14,20,.72);
+  --panel-brd:rgba(255,255,255,.10);
+  --wheel-size:min(66vmin,520px);
+  --radius:16px;
+  --f-title:"Archivo Black","Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-ui:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-hud:"Oswald","Inter",system-ui,sans-serif;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:var(--f-ui);
+  color:var(--fg);
+  background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+a{color:inherit}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+img,svg{display:block}
+.hidden,[hidden]{display:none!important}
+
+/* ----------------------------- фоны и слои ----------------------------- */
+.bg{position:fixed;inset:0;z-index:-2;pointer-events:none}
+.bg::before{
+  content:"";position:absolute;inset:0;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(255,255,255,.055), transparent 60%),
+    radial-gradient(90% 70% at 50% 115%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 65%),
+    linear-gradient(180deg,#05070b 0%,#080b11 45%,#04060a 100%);
+}
+.bg::after{ /* интерьер машины: торпедо */
+  content:"";position:absolute;left:-10%;right:-10%;bottom:-38vh;height:78vh;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.045), rgba(0,0,0,0) 30%),
+    radial-gradient(60% 100% at 50% 0%, #151a22, #070a0e 70%);
+  border-radius:50% 50% 0 0 / 22% 22% 0 0;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.07), 0 -30px 90px rgba(0,0,0,.75);
+  filter:blur(.2px);
+}
+.scanlines{
+  position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.30;
+  background:repeating-linear-gradient(180deg, rgba(255,255,255,.045) 0 1px, transparent 1px 3px);
+  mix-blend-mode:overlay;
+}
+.vignette{
+  position:fixed;inset:0;z-index:59;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 45%, transparent 45%, rgba(0,0,0,.72) 100%);
+}
+.grain{
+  position:fixed;inset:-50%;z-index:58;pointer-events:none;opacity:.055;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>");
+  animation:grain 1.1s steps(4) infinite;
+}
+@keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(-2%,1%)}50%{transform:translate(1%,-2%)}75%{transform:translate(-1%,-1%)}100%{transform:translate(2%,1%)}}
+
+/* =========================================================================
+   ГЛАВНАЯ
+   ========================================================================= */
+.home{min-height:100vh;display:flex;flex-direction:column}
+.home-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 26px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)
+}
+.home-head .brand{color:var(--fg);font-weight:800}
+.home-head a{text-decoration:none;color:var(--muted);transition:color .2s}
+.home-head a:hover{color:var(--accent)}
+
+.title-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 20px;text-align:center;position:relative}
+.title{
+  position:relative;margin:0;line-height:.86;
+  font-family:var(--f-title);
+  font-size:clamp(3.4rem,15.5vw,13rem);
+  letter-spacing:.005em;text-transform:uppercase;
+  color:#f4f7fb;
+  text-shadow:
+    0 1px 0 #b9c4d0, 0 3px 0 #7d8896, 0 6px 0 #4b545f, 0 10px 24px rgba(0,0,0,.85),
+    0 0 70px color-mix(in srgb, var(--accent) 35%, transparent);
+  transform:perspective(700px) rotateX(6deg);
+}
+.title .l1,.title .l2{display:block}
+.title .l1{font-size:.44em;letter-spacing:.42em;color:#cfd8e3;text-shadow:0 2px 10px rgba(0,0,0,.8)}
+.title .l2{
+  background:linear-gradient(180deg,#ffffff 0%,#e6edf6 38%,#9fb0c2 52%,#f2f6fb 62%,#c6d1dd 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 6px 18px rgba(0,0,0,.75));
+}
+.title .l2{animation:glowPulse 5.5s ease-in-out infinite}
+@keyframes glowPulse{
+  0%,100%{filter:drop-shadow(0 6px 18px rgba(0,0,0,.75)) drop-shadow(0 0 26px rgba(127,212,255,.10))}
+  50%{filter:drop-shadow(0 6px 18px rgba(0,0,0,.75)) drop-shadow(0 0 46px rgba(127,212,255,.30))}
+}
+.subtitle{margin:26px 0 0;color:var(--muted);font-size:clamp(.85rem,1.6vw,1.02rem);letter-spacing:.14em;text-transform:uppercase}
+.hint{margin-top:14px;color:#5f6b7c;font-size:12px;letter-spacing:.06em}
+.hint kbd{background:#151b24;border:1px solid #26303c;border-bottom-width:2px;border-radius:5px;padding:1px 6px;font:600 11px/1.6 var(--f-ui);color:#c3ccd8}
+
+/* выбор игры */
+.games{margin:56px auto 0;width:min(1180px,100%);padding:0 22px}
+.games-h{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;color:var(--muted);font-size:11px;letter-spacing:.28em;text-transform:uppercase}
+.games-h::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.14),transparent)}
+.games-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:14px;padding-bottom:60px}
+.game{
+  position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:10px;
+  padding:18px 16px 16px;border-radius:var(--radius);text-decoration:none;overflow:hidden;
+  background:linear-gradient(165deg,rgba(255,255,255,.055),rgba(255,255,255,.012) 45%,rgba(0,0,0,.35));
+  border:1px solid rgba(255,255,255,.09);
+  box-shadow:0 18px 40px -24px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.07);
+  transition:transform .28s cubic-bezier(.2,.8,.2,1), border-color .28s, box-shadow .28s;
+}
+.game::before{
+  content:"";position:absolute;inset:0;opacity:0;transition:opacity .3s;
+  background:radial-gradient(120% 90% at 20% 0%, color-mix(in srgb, var(--c) 26%, transparent), transparent 70%);
+}
+.game:hover,.game:focus-visible{transform:translateY(-6px);border-color:color-mix(in srgb, var(--c) 55%, transparent);box-shadow:0 26px 50px -22px rgba(0,0,0,.95), 0 0 0 1px color-mix(in srgb, var(--c) 22%, transparent), 0 0 42px -12px color-mix(in srgb, var(--c) 55%, transparent)}
+.game:hover::before,.game:focus-visible::before{opacity:1}
+.game>*{position:relative}
+.game .num{
+  font-family:var(--f-title);font-size:clamp(2.6rem,5.4vw,3.6rem);line-height:.9;color:var(--c);
+  text-shadow:0 0 26px color-mix(in srgb, var(--c) 45%, transparent)
+}
+.game .g-name{font-weight:700;font-size:14.5px;letter-spacing:.01em}
+.game .g-meta{color:var(--muted);font-size:11.5px;letter-spacing:.05em}
+.game .g-count{margin-top:auto;padding-top:10px;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:color-mix(in srgb, var(--c) 75%, #ffffff)}
+.game .g-arrow{position:absolute;top:16px;right:14px;color:var(--c);opacity:.35;transition:.28s;font-size:18px}
+.game:hover .g-arrow{opacity:1;transform:translateX(3px)}
+
+.footer{padding:22px;border-top:1px solid rgba(255,255,255,.07);color:#5f6b7c;font-size:11.5px;line-height:1.7;text-align:center}
+.footer a{color:var(--muted)}
+
+/* =========================================================================
+   ЭКРАН РАДИО
+   ========================================================================= */
+.stage{min-height:100vh;display:flex;flex-direction:column;position:relative}
+
+.topbar{
+  display:flex;align-items:center;gap:14px;padding:16px 22px;z-index:20;
+  font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)
+}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;padding:9px 15px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.045);
+  color:#dbe3ee;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  transition:.22s;backdrop-filter:blur(6px)
+}
+.btn:hover{border-color:color-mix(in srgb,var(--accent) 55%,transparent);color:#fff;background:rgba(255,255,255,.09);box-shadow:0 0 22px -8px var(--accent)}
+.btn.primary{border-color:color-mix(in srgb,var(--accent) 50%,transparent);color:#fff;background:color-mix(in srgb,var(--accent) 16%,transparent)}
+.topbar .spacer{flex:1}
+.topbar .game-tag{color:#c6cfdb;font-weight:700}
+.topbar .game-tag b{color:var(--accent)}
+
+/* HUD «как в игре» */
+.hud{
+  position:absolute;top:74px;left:24px;z-index:22;max-width:min(46vw,460px);
+  animation:hudIn .5s cubic-bezier(.2,.9,.2,1) both
+}
+@keyframes hudIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+.hud .st{display:flex;align-items:center;gap:12px}
+.hud .st .ico{width:46px;height:46px;border-radius:11px;overflow:hidden;box-shadow:0 8px 22px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.09)}
+.hud .st .ico svg{width:100%;height:100%}
+.hud .name{font-family:var(--f-hud);font-weight:700;font-size:clamp(17px,2.3vw,25px);letter-spacing:.045em;text-transform:uppercase;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.9)}
+.hud .tag{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin-top:2px}
+.hud .track{margin-top:9px;font-size:13px;color:#c9d3e0;text-shadow:0 1px 6px rgba(0,0,0,.9);display:flex;align-items:center;gap:8px;min-height:19px}
+.hud .track .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:38vw}
+.hud .track .a{color:var(--muted)}
+.hud .live{font-size:9.5px;letter-spacing:.18em;padding:2px 7px;border-radius:4px;background:#c0392b;color:#fff;font-weight:800}
+
+/* ------------------------------- КОЛЕСО ------------------------------- */
+.wheel-stage{flex:1;display:grid;place-items:center;padding:34px 0 8px;position:relative}
+.wheel{position:relative;width:var(--wheel-size);height:var(--wheel-size)}
+.wheel .ring-bg{
+  position:absolute;inset:6%;border-radius:50%;
+  background:radial-gradient(circle at 50% 40%, rgba(255,255,255,.055), rgba(0,0,0,.55) 68%);
+  border:1px solid rgba(255,255,255,.07);
+  box-shadow:inset 0 0 80px rgba(0,0,0,.85), 0 0 60px -20px color-mix(in srgb,var(--accent) 30%,transparent);
+}
+.wheel .ring-bg::after{
+  content:"";position:absolute;inset:14%;border-radius:50%;
+  border:1px dashed rgba(255,255,255,.09);
+  animation:spin 90s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ring{position:absolute;inset:0;transform:rotate(var(--rot,0deg));transition:transform .62s cubic-bezier(.19,.9,.22,1)}
+.st-chip{
+  position:absolute;top:50%;left:50%;width:calc(var(--wheel-size)*.20);height:calc(var(--wheel-size)*.20);
+  margin:calc(var(--wheel-size)*-.10) 0 0 calc(var(--wheel-size)*-.10);
+  /* позиция на круге фиксирована (кольцо поворачивает всё само),
+     а контр-поворот держит иконки и подписи вертикальными */
+  transform:rotate(calc(var(--a) - 90deg)) translate(calc(var(--wheel-size)*.355)) rotate(calc(var(--a)*-1 + 90deg - var(--rot,0deg)));
+  transition:transform .62s cubic-bezier(.19,.9,.22,1), filter .25s, opacity .35s;
+  display:grid;place-items:center;padding:0;
+}
+.st-chip .disc{
+  width:100%;height:100%;border-radius:22%;overflow:hidden;position:relative;
+  border:1px solid rgba(255,255,255,.13);
+  box-shadow:0 14px 30px rgba(0,0,0,.65);
+  transition:transform .25s cubic-bezier(.2,.9,.2,1), box-shadow .25s, border-color .25s;
+}
+.st-chip .disc svg{width:100%;height:100%}
+.st-chip .lbl{
+  position:absolute;top:104%;left:50%;transform:translateX(-50%);
+  width:180%;text-align:center;font-family:var(--f-hud);font-weight:600;
+  font-size:clamp(8.5px,1.15vw,11.5px);letter-spacing:.1em;text-transform:uppercase;
+  color:#9aa6b6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-shadow:0 2px 8px rgba(0,0,0,.95);transition:.25s;opacity:0
+}
+.st-chip.active{z-index:6}
+.st-chip .lbl{z-index:7}
+.st-chip:hover .disc{transform:scale(1.1);border-color:rgba(255,255,255,.35)}
+.st-chip:hover .lbl{color:#e7edf5;opacity:1}
+.st-chip.active .disc{
+  transform:scale(1.22);border-color:color-mix(in srgb,var(--sc) 70%,#fff);
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--sc) 55%,transparent), 0 0 46px -6px color-mix(in srgb,var(--sc) 85%,transparent), 0 18px 34px rgba(0,0,0,.7);
+}
+.st-chip.active .lbl{color:#fff;font-weight:700;opacity:1}
+.st-chip:not(.active){opacity:.72;filter:saturate(.55) brightness(.85)}
+.st-chip:not(.active):hover{opacity:1;filter:none}
+
+.wheel .marker{
+  position:absolute;top:-2px;left:50%;transform:translateX(-50%);z-index:5;
+  width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;
+  border-top:14px solid var(--accent);filter:drop-shadow(0 0 10px var(--accent));opacity:.9
+}
+.hub{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:calc(var(--wheel-size)*.40);height:calc(var(--wheel-size)*.40);
+  border-radius:50%;display:grid;place-items:center;gap:6px;
+  background:radial-gradient(circle at 50% 35%, rgba(20,26,34,.96), rgba(4,6,10,.98));
+  border:1px solid rgba(255,255,255,.09);
+  box-shadow:inset 0 0 40px rgba(0,0,0,.9), 0 0 0 8px rgba(255,255,255,.02), 0 24px 60px rgba(0,0,0,.7)
+}
+.hub .eq{width:64%;height:34%}
+.hub .power{
+  width:46px;height:46px;border-radius:50%;display:grid;place-items:center;
+  border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);transition:.22s
+}
+.hub .power:hover{border-color:var(--accent);box-shadow:0 0 22px -6px var(--accent);background:rgba(255,255,255,.1)}
+.hub .power svg{width:19px;height:19px}
+.hub .hintline{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:#6b7686;text-align:center}
+
+/* ------------------------------- СПИСОК ------------------------------- */
+.list-stage{flex:1;display:flex;align-items:center;padding:20px 4vw 30px;position:relative}
+.stage-num{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-family:var(--f-title);font-size:min(46vmin,420px);line-height:1;
+  color:color-mix(in srgb,var(--accent) 9%, transparent);
+  letter-spacing:.02em;pointer-events:none;user-select:none;white-space:nowrap
+}
+.rpanel{
+  width:min(430px,86vw);border-radius:6px;padding:14px 0 10px;
+  background:linear-gradient(180deg, rgba(14,18,24,.86), rgba(6,9,13,.9));
+  border:1px solid rgba(255,255,255,.13);
+  box-shadow:0 30px 70px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.08);
+  animation:hudIn .45s both
+}
+.rpanel .rp-head{
+  display:flex;align-items:center;gap:9px;padding:0 16px 11px;
+  border-bottom:1px solid rgba(255,255,255,.1);
+  font-family:var(--f-hud);font-weight:700;font-size:13px;letter-spacing:.24em;text-transform:uppercase;color:#dfe6ef
+}
+.rpanel .rp-head .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);animation:blink 1.6s infinite}
+@keyframes blink{50%{opacity:.25}}
+.rlist{list-style:none;margin:8px 0 0;padding:0;max-height:min(58vh,520px);overflow:auto;scrollbar-width:thin}
+.rlist::-webkit-scrollbar{width:6px}
+.rlist::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:3px}
+.rlist li{margin:0}
+.rlist button{
+  width:100%;display:flex;align-items:center;gap:11px;padding:8px 16px;text-align:left;
+  border-left:3px solid transparent;transition:.16s
+}
+.rlist button:hover{background:rgba(255,255,255,.055)}
+.rlist .ico{width:30px;height:30px;border-radius:7px;overflow:hidden;flex:none;box-shadow:0 0 0 1px rgba(255,255,255,.09)}
+.rlist .ico svg{width:100%;height:100%}
+.rlist .nm{font-family:var(--f-hud);font-weight:600;font-size:14px;letter-spacing:.05em;text-transform:uppercase;color:#cfd8e4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rlist .nm{display:block}
+.rlist .tg{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#6f7b8b;margin-top:1px}
+.rlist li.active button{
+  background:linear-gradient(90deg, color-mix(in srgb,var(--accent) 22%,transparent), transparent 85%);
+  border-left-color:var(--accent)
+}
+.rlist li.active .nm{color:#fff;text-shadow:0 0 16px color-mix(in srgb,var(--accent) 60%,transparent)}
+.rlist .eqmini{margin-left:auto;width:26px;height:16px;opacity:0;transition:.2s}
+.rlist li.active .eqmini{opacity:1}
+
+/* ---------------------------- нижняя панель ---------------------------- */
+.bottom{
+  position:relative;z-index:20;display:flex;align-items:center;gap:16px;
+  padding:14px 22px 20px;
+  background:linear-gradient(180deg,transparent, rgba(0,0,0,.55) 40%, rgba(0,0,0,.75));
+}
+.ctrl{display:flex;align-items:center;gap:8px}
+.cbtn{
+  width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
+  border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);transition:.2s
+}
+.cbtn:hover{border-color:var(--accent);box-shadow:0 0 20px -6px var(--accent);background:rgba(255,255,255,.1)}
+.cbtn svg{width:17px;height:17px;fill:#dfe6ef}
+.cbtn.big{width:52px;height:52px}
+.cbtn.big svg{width:22px;height:22px}
+.vol{display:flex;align-items:center;gap:9px;min-width:150px}
+.vol input[type=range]{
+  -webkit-appearance:none;appearance:none;flex:1;height:4px;border-radius:2px;
+  background:linear-gradient(90deg,var(--accent) var(--p,80%), rgba(255,255,255,.15) var(--p,80%));
+  outline:none
+}
+.vol input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 0 10px color-mix(in srgb,var(--accent) 80%,transparent);cursor:pointer}
+.vol input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:#fff;cursor:pointer}
+.nowbar{flex:1;min-width:0}
+.nowbar .row1{display:flex;align-items:baseline;gap:10px;min-width:0}
+.nowbar .stn{font-family:var(--f-hud);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:13px;color:#fff;white-space:nowrap}
+.nowbar .trk{font-size:13px;color:#b9c4d2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nowbar .trk .sep{color:#4d5867;margin:0 7px}
+.nowbar .row2{display:flex;align-items:center;gap:10px;margin-top:5px}
+.prog{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden}
+.prog i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#fff);transition:width .3s linear}
+.time{font-variant-numeric:tabular-nums;font-size:11px;color:#6f7b8b;letter-spacing:.06em}
+.eqbars{display:flex;align-items:flex-end;gap:2px;height:26px;width:110px}
+.eqbars i{flex:1;background:linear-gradient(180deg,#fff,var(--accent));border-radius:1px;height:8%;transition:height .08s linear;opacity:.9}
+.keys{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#5b6675}
+.keys kbd{background:#141a22;border:1px solid #252f3b;border-radius:4px;padding:1px 5px;color:#a9b4c2;font:600 10px/1.5 var(--f-ui)}
+
+/* статус/ошибки */
+.toast{
+  position:fixed;left:50%;bottom:96px;transform:translate(-50%,20px);z-index:80;
+  padding:11px 18px;border-radius:10px;background:rgba(12,16,22,.95);
+  border:1px solid rgba(255,255,255,.14);color:#e6ecf5;font-size:13px;
+  box-shadow:0 20px 50px rgba(0,0,0,.7);opacity:0;pointer-events:none;transition:.3s
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.err{border-color:#c0392b;color:#ffd9d3}
+
+/* =========================================================================
+   ТЕМЫ ИГР
+   ========================================================================= */
+/* GTA V — холодный неон, круг */
+body.theme-v{--accent:#7fd4ff}
+
+/* GTA IV — грязный, приглушённый, оливковый */
+body.theme-iv{
+  --accent:#a8b894;--panel-brd:rgba(255,255,255,.08);
+  filter:saturate(.72) contrast(1.04);
+}
+body.theme-iv .bg::before{
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(190,205,175,.07), transparent 60%),
+    radial-gradient(90% 70% at 50% 115%, rgba(96,110,84,.20), transparent 65%),
+    linear-gradient(180deg,#0b0d09 0%,#101309 45%,#070905 100%);
+}
+body.theme-iv .title,body.theme-iv .hud .name{letter-spacing:.02em}
+body.theme-iv .st-chip:not(.active){filter:grayscale(.5) brightness(.75)}
+
+/* SA — тёплый янтарь, граффити-вайб */
+body.theme-sa{--accent:#ffb03a}
+body.theme-sa .bg::before{
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(255,190,90,.08), transparent 60%),
+    radial-gradient(90% 70% at 50% 115%, rgba(255,140,40,.18), transparent 65%),
+    linear-gradient(180deg,#0a0703 0%,#140d04 45%,#070502 100%);
+}
+body.theme-sa .rpanel{border-color:rgba(255,176,58,.28)}
+body.theme-sa .list-stage{justify-content:flex-end}
+
+/* Vice City — неон-розовый/циан */
+body.theme-vc{--accent:#ff4fa3}
+body.theme-vc .bg::before{
+  background:
+    radial-gradient(100% 70% at 15% 0%, rgba(255,79,163,.20), transparent 60%),
+    radial-gradient(100% 70% at 85% 10%, rgba(79,216,255,.16), transparent 60%),
+    radial-gradient(90% 70% at 50% 115%, rgba(255,79,163,.22), transparent 65%),
+    linear-gradient(180deg,#12040f 0%,#1a0718 45%,#08030a 100%);
+}
+body.theme-vc .bg::after{
+  background:
+    linear-gradient(180deg, rgba(255,120,200,.10), transparent 30%),
+    repeating-linear-gradient(90deg, rgba(79,216,255,.16) 0 1px, transparent 1px 60px),
+    radial-gradient(60% 100% at 50% 0%, #2a0b22, #0a0310 70%);
+}
+body.theme-vc .rpanel{border-color:rgba(255,79,163,.35);box-shadow:0 30px 70px rgba(0,0,0,.7), 0 0 40px -18px #ff4fa3, inset 0 1px 0 rgba(255,255,255,.08)}
+body.theme-vc .hud .name{color:#fff;text-shadow:0 0 18px rgba(255,79,163,.7), 0 2px 10px rgba(0,0,0,.9)}
+
+/* GTA III — зелёный HUD, 2001 */
+body.theme-iii{--accent:#8ee06a}
+body.theme-iii .bg::before{
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(142,224,106,.07), transparent 60%),
+    radial-gradient(90% 70% at 50% 115%, rgba(120,190,90,.16), transparent 65%),
+    linear-gradient(180deg,#050804 0%,#0a1006 45%,#040603 100%);
+}
+body.theme-iii .rpanel{border-color:rgba(142,224,106,.25)}
+body.theme-iii .list-stage{justify-content:flex-start}
+
+/* =========================================================================
+   РЕДАКТОР
+   ========================================================================= */
+.editor{max-width:1180px;margin:0 auto;padding:26px 22px 80px}
+.editor h1{font-family:var(--f-title);font-size:clamp(1.6rem,4vw,2.4rem);margin:0 0 6px;text-transform:uppercase;letter-spacing:.02em}
+.editor .lead{color:var(--muted);font-size:13.5px;line-height:1.7;max-width:76ch;margin:0 0 22px}
+.editor .card{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015));border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:18px;margin-bottom:16px}
+.editor h2{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin:0 0 14px}
+.editor label{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:12px 0 5px}
+.editor input[type=text],.editor select,.editor textarea{
+  width:100%;padding:10px 12px;border-radius:9px;background:#0b0f15;border:1px solid rgba(255,255,255,.12);
+  color:#e7edf5;font:400 13.5px/1.55 var(--f-ui);outline:none;transition:.2s
+}
+.editor input:focus,.editor select:focus,.editor textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+.editor textarea{font:400 12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;min-height:420px;resize:vertical}
+.editor .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.editor .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.editor .stn{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);margin-bottom:7px}
+.editor .stn .ico{width:34px;height:34px;border-radius:8px;overflow:hidden;flex:none}
+.editor .stn .ico svg{width:100%;height:100%}
+.editor .stn .nm{font-weight:600;font-size:13.5px}
+.editor .stn .mt{font-size:11px;color:var(--muted)}
+.editor .pill{font-size:10px;letter-spacing:.14em;text-transform:uppercase;padding:3px 8px;border-radius:99px;border:1px solid rgba(255,255,255,.14);color:var(--muted)}
+.editor .pill.ok{color:#8dff9c;border-color:rgba(141,255,156,.35)}
+.editor .pill.demo{color:#ffd54a;border-color:rgba(255,213,74,.35)}
+.note{border-left:3px solid var(--accent);padding:10px 14px;background:rgba(255,255,255,.04);border-radius:0 10px 10px 0;font-size:13px;line-height:1.7;color:#c3ccd8}
+.note code{background:#0b0f15;padding:1px 6px;border-radius:5px;font-size:12px;color:#ffd54a}
+@media (max-width:760px){
+  :root{--wheel-size:min(88vmin,420px)}
+  .hud{top:66px;left:14px;max-width:70vw}
+  .bottom{flex-wrap:wrap;gap:10px;padding:12px 14px 18px}
+  .nowbar{order:-1;flex:1 1 100%}
+  .keys{display:none}
+  .toast{bottom:170px}
+  .list-stage{justify-content:center!important}
+}

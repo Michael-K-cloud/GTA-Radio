@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Радио — GTA RADIO</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23070b11'/%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%237fd4ff' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%237fd4ff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="theme-v">
+  <div class="bg"></div>
+  <div class="grain"></div>
+  <div class="vignette"></div>
+  <div class="scanlines"></div>
+
+  <div class="stage">
+    <header class="topbar">
+      <button class="btn" id="btnBack">← Игры</button>
+      <span class="game-tag" id="gameTag"></span>
+      <span class="spacer"></span>
+      <button class="btn" id="btnHome">На главную</button>
+    </header>
+
+    <!-- HUD «как в игре»: станция + текущий трек -->
+    <div class="hud">
+      <div class="st">
+        <div class="ico" id="hudIcon"></div>
+        <div>
+          <div class="name" id="hudName">—</div>
+          <div class="tag" id="hudTag"></div>
+        </div>
+      </div>
+      <div class="track">
+        <span class="live hidden" id="hudLive">LIVE</span>
+        <span class="t" id="hudTrack"></span>
+        <span class="a" id="hudArtist"></span>
+      </div>
+    </div>
+
+    <!-- режим 1: круговой селектор (GTA V / IV) -->
+    <div class="wheel-stage" id="wheelStage">
+      <div class="wheel" id="wheel">
+        <div class="ring-bg"></div>
+        <div class="marker"></div>
+        <div class="ring" id="ring"></div>
+        <div class="hub">
+          <canvas class="eq" id="eqHub" width="220" height="90"></canvas>
+          <button class="power" id="btnPower" title="Пауза / играть (Space)" aria-label="Пауза или играть">
+            <svg viewBox="0 0 24 24" id="powerIcon"><path fill="currentColor" d="M7 5h3.5v14H7zm6.5 0H17v14h-3.5z"/></svg>
+          </button>
+          <div class="hintline">← → смена волны</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- режим 2: список станций (SA / VC / III) -->
+    <div class="list-stage hidden" id="listStage">
+      <div class="stage-num" id="stageNum" aria-hidden="true"></div>
+      <div class="rpanel">
+        <div class="rp-head"><span class="dot"></span><span>Radio stations</span></div>
+        <ul class="rlist" id="rlist"></ul>
+      </div>
+    </div>
+
+    <!-- нижняя «магнитола» -->
+    <footer class="bottom">
+      <div class="ctrl">
+        <button class="cbtn" id="btnPrev" title="Предыдущая станция" aria-label="Предыдущая станция">
+          <svg viewBox="0 0 24 24"><path d="M7 6h2v12H7zm10 0v12l-8-6z"/></svg>
+        </button>
+        <button class="cbtn big" id="btnPlay" title="Пауза / играть" aria-label="Пауза или играть">
+          <svg viewBox="0 0 24 24" id="playIcon"><path d="M7 5h3.5v14H7zm6.5 0H17v14h-3.5z"/></svg>
+        </button>
+        <button class="cbtn" id="btnNext" title="Следующая станция" aria-label="Следующая станция">
+          <svg viewBox="0 0 24 24"><path d="M15 6h2v12h-2zM7 6v12l8-6z"/></svg>
+        </button>
+      </div>
+
+      <div class="nowbar">
+        <div class="row1">
+          <span class="stn" id="nowStation">—</span>
+          <span class="trk" id="nowTrack"></span>
+        </div>
+        <div class="row2">
+          <span class="time" id="tCur">0:00</span>
+          <div class="prog"><i id="progFill"></i></div>
+          <span class="time" id="tDur">0:00</span>
+        </div>
+      </div>
+
+      <div class="eqbars" id="eqbars"></div>
+
+      <div class="vol">
+        <button class="cbtn" id="btnMute" title="Звук вкл/выкл" aria-label="Звук">
+          <svg viewBox="0 0 24 24" id="volIcon"><path d="M4 9v6h4l5 4V5L8 9zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/></svg>
+        </button>
+        <input type="range" id="vol" min="0" max="100" value="80" aria-label="Громкость">
+      </div>
+
+      <div class="keys"><kbd>←</kbd><kbd>→</kbd> волна · <kbd>Space</kbd> пауза · <kbd>M</kbd> звук · <kbd>Esc</kbd> выход</div>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script src="js/config.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/radio.js"></script>
+</body>
+</html>

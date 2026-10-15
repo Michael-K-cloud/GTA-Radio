@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GTA RADIO — фанатское радио из игр серии</title>
+<meta name="description" content="Single-file демо: радиостанции из GTA V, IV, San Andreas, Vice City и GTA III.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23070b11'/%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%237fd4ff' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%237fd4ff'/%3E%3C/svg%3E">
+<style>
+/* =========================================================================
+   GTA RADIO — общие стили
+   Темы игр подключаются классом на <body>: theme-v / theme-iv / theme-sa ...
+   ========================================================================= */
+
+:root{
+  --bg:#04060a;
+  --bg2:#0a0e14;
+  --fg:#eef2f7;
+  --muted:#8b96a7;
+  --accent:#7fd4ff;
+  --panel:rgba(10,14,20,.72);
+  --panel-brd:rgba(255,255,255,.10);
+  --wheel-size:min(66vmin,520px);
+  --radius:16px;
+  --f-title:"Archivo Black","Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-ui:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-hud:"Oswald","Inter",system-ui,sans-serif;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:var(--f-ui);
+  color:var(--fg);
+  background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+a{color:inherit}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+img,svg{display:block}
+.hidden,[hidden]{display:none!important}
+
+/* ----------------------------- фоны и слои ----------------------------- */
+.bg{position:fixed;inset:0;z-index:-2;pointer-events:none}
+.bg::before{
+  content:"";position:absolute;inset:0;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(255,255,255,.055), transparent 60%),
+    radial-gradient(90% 70% at 50% 115%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 65%),
+    linear-gradient(180deg,#05070b 0%,#080b11 45%,#04060a 100%);
+}
+.bg::after{ /* интерьер машины: торпедо */
+  content:"";position:absolute;left:-10%;right:-10%;bottom:-38vh;height:78vh;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.045), rgba(0,0,0,0) 30%),
+    radial-gradient(60% 100% at 50% 0%, #151a22, #070a0e 70%);
+  border-radius:50% 50% 0 0 / 22% 22% 0 0;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.07), 0 -30px 90px rgba(0,0,0,.75);
+  filter:blur(.2px);
+}
+.scanlines{
+  position:fixed;inset:0;z-index:60;pointer-events:none;opacity:.30;
+  background:repeating-linear-gradient(180deg, rgba(255,255,255,.045) 0 1px, transparent 1px 3px);
+  mix-blend-mode:overlay;
+}
+.vignette{
+  position:fixed;inset:0;z-index:59;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 45%, transparent 45%, rgba(0,0,0,.72) 100%);
+}
+.grain{
+  position:fixed;inset:-50%;z-index:58;pointer-events:none;opacity:.055;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>");
+  animation:grain 1.1s steps(4) infinite;
+}
+@keyframes grain{0%{transform:translate(0,0)}25%{transform:translate(-2%,1%)}50%{transform:translate(1%,-2%)}75%{transform:translate(-1%,-1%)}100%{transform:translate(2%,1%)}}
+
+/* =========================================================================
+   ГЛАВНАЯ
+   ========================================================================= */
+.home{min-height:100vh;display:flex;flex-direction:column}
+.home-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 26px;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)
+}
+.home-head .brand{color:var(--fg);font-weight:800}
+.home-head a{text-decoration:none;color:var(--muted);transition:color .2s}
+.home-head a:hover{color:var(--accent)}
+
+.title-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 20px;text-align:center;position:relative}
+.title{
+  position:relative;margin:0;line-height:.86;
+  font-family:var(--f-title);
+  font-size:clamp(3.4rem,15.5vw,13rem);
+  letter-spacing:.005em;text-transform:uppercase;
+  color:#f4f7fb;
+  text-shadow:
+    0 1px 0 #b9c4d0, 0 3px 0 #7d8896, 0 6px 0 #4b545f, 0 10px 24px rgba(0,0,0,.85),
+    0 0 70px color-mix(in srgb, var(--accent) 35%, transparent);
+  transform:perspective(700px) rotateX(6deg);
+}
+.title .l1,.title .l2{display:block}
+.title .l1{font-size:.44em;letter-spacing:.42em;color:#cfd8e3;text-shadow:0 2px 10px rgba(0,0,0,.8)}
+.title .l2{
+  background:linear-gradient(180deg,#ffffff 0%,#e6edf6 38%,#9fb0c2 52%,#f2f6fb 62%,#c6d1dd 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 6px 18px rgba(0,0,0,.75));
+}
+.title .l2{animation:glowPulse 5.5s ease-in-out infinite}
+@keyframes glowPulse{
+  0%,100%{filter:drop-shadow(0 6px 18px rgba(0,0,0,.75)) drop-shadow(0 0 26px rgba(127,212,255,.10))}
+  50%{filter:drop-shadow(0 6px 18px rgba(0,0,0,.75)) drop-shadow(0 0 46px rgba(127,212,255,.30))}
+}
+.subtitle{margin:26px 0 0;color:var(--muted);font-size:clamp(.85rem,1.6vw,1.02rem);letter-spacing:.14em;text-transform:uppercase}
+.hint{margin-top:14px;color:#5f6b7c;font-size:12px;letter-spacing:.06em}
+.hint kbd{background:#151b24;border:1px solid #26303c;border-bottom-width:2px;border-radius:5px;padding:1px 6px;font:600 11px/1.6 var(--f-ui);color:#c3ccd8}
+
+/* выбор игры */
+.games{margin:56px auto 0;width:min(1180px,100%);padding:0 22px}
+.games-h{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;color:var(--muted);font-size:11px;letter-spacing:.28em;text-transform:uppercase}
+.games-h::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.14),transparent)}
+.games-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:14px;padding-bottom:60px}
+.game{
+  position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:10px;
+  padding:18px 16px 16px;border-radius:var(--radius);text-decoration:none;overflow:hidden;
+  background:linear-gradient(165deg,rgba(255,255,255,.055),rgba(255,255,255,.012) 45%,rgba(0,0,0,.35));
+  border:1px solid rgba(255,255,255,.09);
+  box-shadow:0 18px 40px -24px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.07);
+  transition:transform .28s cubic-bezier(.2,.8,.2,1), border-color .28s, box-shadow .28s;
+}
+.game::before{
+  content:"";position:absolute;inset:0;opacity:0;transition:opacity .3s;
+  background:radial-gradient(120% 90% at 20% 0%, color-mix(in srgb, var(--c) 26%, transparent), transparent 70%);
+}
+.game:hover,.game:focus-visible{transform:translateY(-6px);border-color:color-mix(in srgb, var(--c) 55%, transparent);box-shadow:0 26px 50px -22px rgba(0,0,0,.95), 0 0 0 1px color-mix(in srgb, var(--c) 22%, transparent), 0 0 42px -12px color-mix(in srgb, var(--c) 55%, transparent)}
+.game:hover::before,.game:focus-visible::before{opacity:1}
+.game>*{position:relative}
+.game .num{
+  font-family:var(--f-title);font-size:clamp(2.6rem,5.4vw,3.6rem);line-height:.9;color:var(--c);
+  text-shadow:0 0 26px color-mix(in srgb, var(--c) 45%, transparent)
+}
+.game .g-name{font-weight:700;font-size:14.5px;letter-spacing:.01em}
+.game .g-meta{color:var(--muted);font-size:11.5px;letter-spacing:.05em}
+.game .g-count{margin-top:auto;padding-top:10px;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:color-mix(in srgb, var(--c) 75%, #ffffff)}
+.game .g-arrow{position:absolute;top:16px;right:14px;color:var(--c);opacity:.35;transition:.28s;font-size:18px}
+.game:hover .g-arrow{opacity:1;transform:translateX(3px)}
+
+.footer{padding:22px;border-top:1px solid rgba(255,255,255,.07);color:#5f6b7c;font-size:11.5px;line-height:1.7;text-align:center}
+.footer a{color:var(--muted)}
+
+/* =========================================================================
+   ЭКРАН РАДИО
+   ========================================================================= */
+.stage{min-height:100vh;display:flex;flex-direction:column;position:relative}
+
+.topbar{
+  display:flex;align-items:center;gap:14px;padding:16px 22px;z-index:20;
+  font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)
+}
+.btn{
+  display:inline-flex;align-items:center;gap:8px;padding:9px 15px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.045);
+  color:#dbe3ee;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  transition:.22s;backdrop-filter:blur(6px)
+}
+.btn:hover{border-color:color-mix(in srgb,var(--accent) 55%,transparent);color:#fff;background:rgba(255,255,255,.09);box-shadow:0 0 22px -8px var(--accent)}
+.btn.primary{border-color:color-mix(in srgb,var(--accent) 50%,transparent);color:#fff;background:color-mix(in srgb,var(--accent) 16%,transparent)}
+.topbar .spacer{flex:1}
+.topbar .game-tag{color:#c6cfdb;font-weight:700}
+.topbar .game-tag b{color:var(--accent)}
+
+/* HUD «как в игре» */
+.hud{
+  position:absolute;top:74px;left:24px;z-index:22;max-width:min(46vw,460px);
+  animation:hudIn .5s cubic-bezier(.2,.9,.2,1) both
+}
+@keyframes hudIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+.hud .st{display:flex;align-items:center;gap:12px}
+.hud .st .ico{width:46px;height:46px;border-radius:11px;overflow:hidden;box-shadow:0 8px 22px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.09)}
+.hud .st .ico svg{width:100%;height:100%}
+.hud .name{font-family:var(--f-hud);font-weight:700;font-size:clamp(17px,2.3vw,25px);letter-spacing:.045em;text-transform:uppercase;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.9)}
+.hud .tag{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);margin-top:2px}
+.hud .track{margin-top:9px;font-size:13px;color:#c9d3e0;text-shadow:0 1px 6px rgba(0,0,0,.9);display:flex;align-items:center;gap:8px;min-height:19px}
+.hud .track .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:38vw}
+.hud .track .a{color:var(--muted)}
+.hud .live{font-size:9.5px;letter-spacing:.18em;padding:2px 7px;border-radius:4px;background:#c0392b;color:#fff;font-weight:800}
+
+/* ------------------------------- КОЛЕСО ------------------------------- */
+.wheel-stage{flex:1;display:grid;place-items:center;padding:34px 0 8px;position:relative}
+.wheel{position:relative;width:var(--wheel-size);height:var(--wheel-size)}
+.wheel .ring-bg{
+  position:absolute;inset:6%;border-radius:50%;
+  background:radial-gradient(circle at 50% 40%, rgba(255,255,255,.055), rgba(0,0,0,.55) 68%);
+  border:1px solid rgba(255,255,255,.07);
+  box-shadow:inset 0 0 80px rgba(0,0,0,.85), 0 0 60px -20px color-mix(in srgb,var(--accent) 30%,transparent);
+}
+.wheel .ring-bg::after{
+  content:"";position:absolute;inset:14%;border-radius:50%;
+  border:1px dashed rgba(255,255,255,.09);
+  animation:spin 90s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ring{position:absolute;inset:0;transform:rotate(var(--rot,0deg));transition:transform .62s cubic-bezier(.19,.9,.22,1)}
+.st-chip{
+  position:absolute;top:50%;left:50%;width:calc(var(--wheel-size)*.20);height:calc(var(--wheel-size)*.20);
+  margin:calc(var(--wheel-size)*-.10) 0 0 calc(var(--wheel-size)*-.10);
+  /* позиция на круге фиксирована (кольцо поворачивает всё само),
+     а контр-поворот держит иконки и подписи вертикальными */
+  transform:rotate(calc(var(--a) - 90deg)) translate(calc(var(--wheel-size)*.355)) rotate(calc(var(--a)*-1 + 90deg - var(--rot,0deg)));
+  transition:transform .62s cubic-bezier(.19,.9,.22,1), filter .25s, opacity .35s;
+  display:grid;place-items:center;padding:0;
+}
+.st-chip .disc{
+  width:100%;height:100%;border-radius:22%;overflow:hidden;position:relative;
+  border:1px solid rgba(255,255,255,.13);
+  box-shadow:0 14px 30px rgba(0,0,0,.65);
+  transition:transform .25s cubic-bezier(.2,.9,.2,1), box-shadow .25s, border-color .25s;
+}
+.st-chip .disc svg{width:100%;height:100%}
+.st-chip .lbl{
+  position:absolute;top:104%;left:50%;transform:translateX(-50%);
+  width:180%;text-align:center;font-family:var(--f-hud);font-weight:600;
+  font-size:clamp(8.5px,1.15vw,11.5px);letter-spacing:.1em;text-transform:uppercase;
+  color:#9aa6b6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-shadow:0 2px 8px rgba(0,0,0,.95);transition:.25s;opacity:0
+}
+.st-chip.active{z-index:6}
+.st-chip .lbl{z-index:7}
+.st-chip:hover .disc{transform:scale(1.1);border-color:rgba(255,255,255,.35)}
+.st-chip:hover .lbl{color:#e7edf5;opacity:1}
+.st-chip.active .disc{
+  transform:scale(1.22);border-color:color-mix(in srgb,var(--sc) 70%,#fff);
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--sc) 55%,transparent), 0 0 46px -6px color-mix(in srgb,var(--sc) 85%,transparent), 0 18px 34px rgba(0,0,0,.7);
+}
+.st-chip.active .lbl{color:#fff;font-weight:700;opacity:1}
+.st-chip:not(.active){opacity:.72;filter:saturate(.55) brightness(.85)}
+.st-chip:not(.active):hover{opacity:1;filter:none}
+
+.wheel .marker{
+  position:absolute;top:-2px;left:50%;transform:translateX(-50%);z-index:5;
+  width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;
+  border-top:14px solid var(--accent);filter:drop-shadow(0 0 10px var(--accent));opacity:.9
+}
+.hub{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:calc(var(--wheel-size)*.40);height:calc(var(--wheel-size)*.40);
+  border-radius:50%;display:grid;place-items:center;gap:6px;
+  background:radial-gradient(circle at 50% 35%, rgba(20,26,34,.96), rgba(4,6,10,.98));
+  border:1px solid rgba(255,255,255,.09);
+  box-shadow:inset 0 0 40px rgba(0,0,0,.9), 0 0 0 8px rgba(255,255,255,.02), 0 24px 60px rgba(0,0,0,.7)
+}
+.hub .eq{width:64%;height:34%}
+.hub .power{
+  width:46px;height:46px;border-radius:50%;display:grid;place-items:center;
+  border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);transition:.22s
+}
+.hub .power:hover{border-color:var(--accent);box-shadow:0 0 22px -6px var(--accent);background:rgba(255,255,255,.1)}
+.hub .power svg{width:19px;height:19px}
+.hub .hintline{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:#6b7686;text-align:center}
+
+/* ------------------------------- СПИСОК ------------------------------- */
+.list-stage{flex:1;display:flex;align-items:center;padding:20px 4vw 30px;position:relative}
+.stage-num{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-family:var(--f-title);font-size:min(46vmin,420px);line-height:1;
+  color:color-mix(in srgb,var(--accent) 9%, transparent);
+  letter-spacing:.02em;pointer-events:none;user-select:none;white-space:nowrap
+}
+.rpanel{
+  width:min(430px,86vw);border-radius:6px;padding:14px 0 10px;
+  background:linear-gradient(180deg, rgba(14,18,24,.86), rgba(6,9,13,.9));
+  border:1px solid rgba(255,255,255,.13);
+  box-shadow:0 30px 70px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.08);
+  animation:hudIn .45s both
+}
+.rpanel .rp-head{
+  display:flex;align-items:center;gap:9px;padding:0 16px 11px;
+  border-bottom:1px solid rgba(255,255,255,.1);
+  font-family:var(--f-hud);font-weight:700;font-size:13px;letter-spacing:.24em;text-transform:uppercase;color:#dfe6ef
+}
+.rpanel .rp-head .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);animation:blink 1.6s infinite}
+@keyframes blink{50%{opacity:.25}}
+.rlist{list-style:none;margin:8px 0 0;padding:0;max-height:min(58vh,520px);overflow:auto;scrollbar-width:thin}
+.rlist::-webkit-scrollbar{width:6px}
+.rlist::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:3px}
+.rlist li{margin:0}
+.rlist button{
+  width:100%;display:flex;align-items:center;gap:11px;padding:8px 16px;text-align:left;
+  border-left:3px solid transparent;transition:.16s
+}
+.rlist button:hover{background:rgba(255,255,255,.055)}
+.rlist .ico{width:30px;height:30px;border-radius:7px;overflow:hidden;flex:none;box-shadow:0 0 0 1px rgba(255,255,255,.09)}
+.rlist .ico svg{width:100%;height:100%}
+.rlist .nm{font-family:var(--f-hud);font-weight:600;font-size:14px;letter-spacing:.05em;text-transform:uppercase;color:#cfd8e4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rlist .nm{display:block}
+.rlist .tg{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#6f7b8b;margin-top:1px}
+.rlist li.active button{
+  background:linear-gradient(90deg, color-mix(in srgb,var(--accent) 22%,transparent), transparent 85%);
+  border-left-color:var(--accent)
+}
+.rlist li.active .nm{color:#fff;text-shadow:0 0 16px color-mix(in srgb,var(--accent) 60%,transparent)}
+.rlist .eqmini{margin-left:auto;width:26px;height:16px;opacity:0;transition:.2s}
+.rlist li.active .eqmini{opacity:1}
+
+/* ---------------------------- нижняя панель ---------------------------- */
+.bottom{
+  position:relative;z-index:20;display:flex;align-items:center;gap:16px;
+  padding:14px 22px 20px;
+  background:linear-gradient(180deg,transparent, rgba(0,0,0,.55) 40%, rgba(0,0,0,.75));
+}
+.ctrl{display:flex;align-items:center;gap:8px}
+.cbtn{
+  width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
+  border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);transition:.2s
+}
+.cbtn:hover{border-color:var(--accent);box-shadow:0 0 20px -6px var(--accent);background:rgba(255,255,255,.1)}
+.cbtn svg{width:17px;height:17px;fill:#dfe6ef}
+.cbtn.big{width:52px;height:52px}
+.cbtn.big svg{width:22px;height:22px}
+.vol{display:flex;align-items:center;gap:9px;min-width:150px}
+.vol input[type=range]{
+  -webkit-appearance:none;appearance:none;flex:1;height:4px;border-radius:2px;
+  background:linear-gradient(90deg,var(--accent) var(--p,80%), rgba(255,255,255,.15) var(--p,80%));
+  outline:none
+}
+.vol input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 0 10px color-mix(in srgb,var(--accent) 80%,transparent);cursor:pointer}
+.vol input[type=range]::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:#fff;cursor:pointer}
+.nowbar{flex:1;min-width:0}
+.nowbar .row1{display:flex;align-items:baseline;gap:10px;min-width:0}
+.nowbar .stn{font-family:var(--f-hud);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:13px;color:#fff;white-space:nowrap}
+.nowbar .trk{font-size:13px;color:#b9c4d2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nowbar .trk .sep{color:#4d5867;margin:0 7px}
+.nowbar .row2{display:flex;align-items:center;gap:10px;margin-top:5px}
+.prog{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden}
+.prog i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#fff);transition:width .3s linear}
+.time{font-variant-numeric:tabular-nums;font-size:11px;color:#6f7b8b;letter-spacing:.06em}
+.eqbars{display:flex;align-items:flex-end;gap:2px;height:26px;width:110px}
+.eqbars i{flex:1;background:linear-gradient(180deg,#fff,var(--accent));border-radius:1px;height:8%;transition:height .08s linear;opacity:.9}
+.keys{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#5b6675}
+.keys kbd{background:#141a22;border:1px solid #252f3b;border-radius:4px;padding:1px 5px;color:#a9b4c2;font:600 10px/1.5 var(--f-ui)}
+
+/* статус/ошибки */
+.toast{
+  position:fixed;left:50%;bottom:96px;transform:translate(-50%,20px);z-index:80;
+  padding:11px 18px;border-radius:10px;background:rgba(12,16,22,.95);
+  border:1px solid rgba(255,255,255,.14);color:#e6ecf5;font-size:13px;
+  box-shadow:0 20px 50px rgba(0,0,0,.7);opacity:0;pointer-events:none;transition:.3s
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.err{border-color:#c0392b;color:#ffd9d3}
+
+/* =========================================================================
+   ТЕМЫ ИГР
+   ========================================================================= */
+/* GTA V — холодный неон, круг */
+body.theme-v{--accent:#7fd4ff}
+
+/* GTA IV — грязный, приглушённый, оливковый */
+body.theme-iv{
+  --accent:#a8b894;--panel-brd:rgba(255,255,255,.08);
+  filter:saturate(.72) contrast(1.04);
+}
+body.theme-iv .bg::before{
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(190,205,175,.07), transparent 60%),
+    radial-gradient(90% 70% at 50% 115%, rgba(96,110,84,.20), transparent 65%),
+    linear-gradient(180deg,#0b0d09 0%,#101309 45%,#070905 100%);
+}
+body.theme-iv .title,body.theme-iv .hud .name{letter-spacing:.02em}
+body.theme-iv .st-chip:not(.active){filter:grayscale(.5) brightness(.75)}
+
+/* SA — тёплый янтарь, граффити-вайб */
+body.theme-sa{--accent:#ffb03a}
+body.theme-sa .bg::before{
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(255,190,90,.08), transparent 60%),
+    radial-gradient(90% 70% at 50% 115%, rgba(255,140,40,.18), transparent 65%),
+    linear-gradient(180deg,#0a0703 0%,#140d04 45%,#070502 100%);
+}
+body.theme-sa .rpanel{border-color:rgba(255,176,58,.28)}
+body.theme-sa .list-stage{justify-content:flex-end}
+
+/* Vice City — неон-розовый/циан */
+body.theme-vc{--accent:#ff4fa3}
+body.theme-vc .bg::before{
+  background:
+    radial-gradient(100% 70% at 15% 0%, rgba(255,79,163,.20), transparent 60%),
+    radial-gradient(100% 70% at 85% 10%, rgba(79,216,255,.16), transparent 60%),
+    radial-gradient(90% 70% at 50% 115%, rgba(255,79,163,.22), transparent 65%),
+    linear-gradient(180deg,#12040f 0%,#1a0718 45%,#08030a 100%);
+}
+body.theme-vc .bg::after{
+  background:
+    linear-gradient(180deg, rgba(255,120,200,.10), transparent 30%),
+    repeating-linear-gradient(90deg, rgba(79,216,255,.16) 0 1px, transparent 1px 60px),
+    radial-gradient(60% 100% at 50% 0%, #2a0b22, #0a0310 70%);
+}
+body.theme-vc .rpanel{border-color:rgba(255,79,163,.35);box-shadow:0 30px 70px rgba(0,0,0,.7), 0 0 40px -18px #ff4fa3, inset 0 1px 0 rgba(255,255,255,.08)}
+body.theme-vc .hud .name{color:#fff;text-shadow:0 0 18px rgba(255,79,163,.7), 0 2px 10px rgba(0,0,0,.9)}
+
+/* GTA III — зелёный HUD, 2001 */
+body.theme-iii{--accent:#8ee06a}
+body.theme-iii .bg::before{
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(142,224,106,.07), transparent 60%),
+    radial-gradient(90% 70% at 50% 115%, rgba(120,190,90,.16), transparent 65%),
+    linear-gradient(180deg,#050804 0%,#0a1006 45%,#040603 100%);
+}
+body.theme-iii .rpanel{border-color:rgba(142,224,106,.25)}
+body.theme-iii .list-stage{justify-content:flex-start}
+
+/* =========================================================================
+   РЕДАКТОР
+   ========================================================================= */
+.editor{max-width:1180px;margin:0 auto;padding:26px 22px 80px}
+.editor h1{font-family:var(--f-title);font-size:clamp(1.6rem,4vw,2.4rem);margin:0 0 6px;text-transform:uppercase;letter-spacing:.02em}
+.editor .lead{color:var(--muted);font-size:13.5px;line-height:1.7;max-width:76ch;margin:0 0 22px}
+.editor .card{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015));border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:18px;margin-bottom:16px}
+.editor h2{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);margin:0 0 14px}
+.editor label{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:12px 0 5px}
+.editor input[type=text],.editor select,.editor textarea{
+  width:100%;padding:10px 12px;border-radius:9px;background:#0b0f15;border:1px solid rgba(255,255,255,.12);
+  color:#e7edf5;font:400 13.5px/1.55 var(--f-ui);outline:none;transition:.2s
+}
+.editor input:focus,.editor select:focus,.editor textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+.editor textarea{font:400 12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;min-height:420px;resize:vertical}
+.editor .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.editor .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.editor .stn{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);margin-bottom:7px}
+.editor .stn .ico{width:34px;height:34px;border-radius:8px;overflow:hidden;flex:none}
+.editor .stn .ico svg{width:100%;height:100%}
+.editor .stn .nm{font-weight:600;font-size:13.5px}
+.editor .stn .mt{font-size:11px;color:var(--muted)}
+.editor .pill{font-size:10px;letter-spacing:.14em;text-transform:uppercase;padding:3px 8px;border-radius:99px;border:1px solid rgba(255,255,255,.14);color:var(--muted)}
+.editor .pill.ok{color:#8dff9c;border-color:rgba(141,255,156,.35)}
+.editor .pill.demo{color:#ffd54a;border-color:rgba(255,213,74,.35)}
+.note{border-left:3px solid var(--accent);padding:10px 14px;background:rgba(255,255,255,.04);border-radius:0 10px 10px 0;font-size:13px;line-height:1.7;color:#c3ccd8}
+.note code{background:#0b0f15;padding:1px 6px;border-radius:5px;font-size:12px;color:#ffd54a}
+@media (max-width:760px){
+  :root{--wheel-size:min(88vmin,420px)}
+  .hud{top:66px;left:14px;max-width:70vw}
+  .bottom{flex-wrap:wrap;gap:10px;padding:12px 14px 18px}
+  .nowbar{order:-1;flex:1 1 100%}
+  .keys{display:none}
+  .toast{bottom:170px}
+  .list-stage{justify-content:center!important}
+}
+
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="grain"></div>
+  <div class="vignette"></div>
+  <div class="scanlines"></div>
+
+  <div id="screenHome">
+<div class="home">
+    <header class="home-head">
+      <span class="brand">◉ GTA RADIO</span>
+      <span><a href="editor.html">Редактор станций</a> · <a href="https://github.com/" target="_blank" rel="noopener">GitHub</a></span>
+    </header>
+
+    <main class="title-wrap">
+      <h1 class="title"><span class="l1">GTA</span><span class="l2">RADIO</span></h1>
+      <p class="subtitle" id="subtitle">выбери игру — получи её эфир</p>
+      <p class="hint">Наведи на игру → кликни → крути колесо станций. <kbd>←</kbd> <kbd>→</kbd> переключают волну, <kbd>Space</kbd> — пауза.</p>
+
+      <section class="games">
+        <div class="games-h"><span>Выбор игры</span></div>
+        <div class="games-grid" id="games"></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p id="disclaimer"></p>
+      <p>Прототип v<span id="ver"></span> · всё содержимое правится в <a href="editor.html">редакторе</a> или в <code>js/config.js</code></p>
+    </footer>
+  </div>
+
+
+  </div>
+
+  <div id="screenRadio" hidden>
+<div class="stage">
+    <header class="topbar">
+      <button class="btn" id="btnBack">← Игры</button>
+      <span class="game-tag" id="gameTag"></span>
+      <span class="spacer"></span>
+      <button class="btn" id="btnHome">На главную</button>
+    </header>
+
+    <!-- HUD «как в игре»: станция + текущий трек -->
+    <div class="hud">
+      <div class="st">
+        <div class="ico" id="hudIcon"></div>
+        <div>
+          <div class="name" id="hudName">—</div>
+          <div class="tag" id="hudTag"></div>
+        </div>
+      </div>
+      <div class="track">
+        <span class="live hidden" id="hudLive">LIVE</span>
+        <span class="t" id="hudTrack"></span>
+        <span class="a" id="hudArtist"></span>
+      </div>
+    </div>
+
+    <!-- режим 1: круговой селектор (GTA V / IV) -->
+    <div class="wheel-stage" id="wheelStage">
+      <div class="wheel" id="wheel">
+        <div class="ring-bg"></div>
+        <div class="marker"></div>
+        <div class="ring" id="ring"></div>
+        <div class="hub">
+          <canvas class="eq" id="eqHub" width="220" height="90"></canvas>
+          <button class="power" id="btnPower" title="Пауза / играть (Space)" aria-label="Пауза или играть">
+            <svg viewBox="0 0 24 24" id="powerIcon"><path fill="currentColor" d="M7 5h3.5v14H7zm6.5 0H17v14h-3.5z"/></svg>
+          </button>
+          <div class="hintline">← → смена волны</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- режим 2: список станций (SA / VC / III) -->
+    <div class="list-stage hidden" id="listStage">
+      <div class="stage-num" id="stageNum" aria-hidden="true"></div>
+      <div class="rpanel">
+        <div class="rp-head"><span class="dot"></span><span>Radio stations</span></div>
+        <ul class="rlist" id="rlist"></ul>
+      </div>
+    </div>
+
+    <!-- нижняя «магнитола» -->
+    <footer class="bottom">
+      <div class="ctrl">
+        <button class="cbtn" id="btnPrev" title="Предыдущая станция" aria-label="Предыдущая станция">
+          <svg viewBox="0 0 24 24"><path d="M7 6h2v12H7zm10 0v12l-8-6z"/></svg>
+        </button>
+        <button class="cbtn big" id="btnPlay" title="Пауза / играть" aria-label="Пауза или играть">
+          <svg viewBox="0 0 24 24" id="playIcon"><path d="M7 5h3.5v14H7zm6.5 0H17v14h-3.5z"/></svg>
+        </button>
+        <button class="cbtn" id="btnNext" title="Следующая станция" aria-label="Следующая станция">
+          <svg viewBox="0 0 24 24"><path d="M15 6h2v12h-2zM7 6v12l8-6z"/></svg>
+        </button>
+      </div>
+
+      <div class="nowbar">
+        <div class="row1">
+          <span class="stn" id="nowStation">—</span>
+          <span class="trk" id="nowTrack"></span>
+        </div>
+        <div class="row2">
+          <span class="time" id="tCur">0:00</span>
+          <div class="prog"><i id="progFill"></i></div>
+          <span class="time" id="tDur">0:00</span>
+        </div>
+      </div>
+
+      <div class="eqbars" id="eqbars"></div>
+
+      <div class="vol">
+        <button class="cbtn" id="btnMute" title="Звук вкл/выкл" aria-label="Звук">
+          <svg viewBox="0 0 24 24" id="volIcon"><path d="M4 9v6h4l5 4V5L8 9zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/></svg>
+        </button>
+        <input type="range" id="vol" min="0" max="100" value="80" aria-label="Громкость">
+      </div>
+
+      <div class="keys"><kbd>←</kbd><kbd>→</kbd> волна · <kbd>Space</kbd> пауза · <kbd>M</kbd> звук · <kbd>Esc</kbd> выход</div>
+    </footer>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  </div>
+
+<script>window.SINGLE = true;</script>
+<script>
+/* =========================================================================
+   GTA RADIO — единый конфиг сайта
+   -------------------------------------------------------------------------
+   ВСЁ содержимое (игры, станции, треки, цвета, иконки) правится ЗДЕСЬ
+   или через визуальный редактор: /editor.html  (кнопка «Сохранить config.js»).
+
+   Типы источников звука у трека (поле src):
+     "demo"   — процедурный звук прямо в браузере (WebAudio). Ничего качать
+                не надо, работает сразу. Идеально для прототипа.
+     "file"   — локальный mp3/ogg из папки audio/<game>/...
+                src: "v/los-santos-rock.mp3"  (путь ОТНОСИТЕЛЬНО папки audio/)
+                или абсолютный: "/music/track.mp3"
+     "stream" — внешний URL (S3 / R2 / Icecast / любой https-линк).
+                ВНИМАНИЕ: сервер должен отдавать заголовок
+                Access-Control-Allow-Origin: * , иначе браузер заблокирует.
+
+   Если у станции несколько треков — они играют по очереди, без пауз.
+   ========================================================================= */
+
+window.RADIO_CONFIG = {
+  meta: {
+    title: "GTA RADIO",
+    subtitle: "Фанатский концепт-прототип · радиостанции из игр серии",
+    // Папка с аудиофайлами (относительно корня сайта)
+    audioBase: "audio/",
+    // Дисклеймер показывается в подвале и на экране радио
+    disclaimer:
+      "Неофициальный фанатский проект. Не связан с Rockstar Games и Take-Two Interactive. " +
+      "Все названия станций вымышлены, музыка в демо генерируется браузером. " +
+      "Публикуйте только те аудиозаписи, на которые у вас есть права.",
+    version: "0.1.0"
+  },
+
+  games: [
+    /* ---------------------------------------------------------------- V */
+    {
+      id: "v",
+      num: "V",
+      name: "Grand Theft Auto V",
+      year: 2013,
+      city: "Los Santos",
+      ui: "wheel",            // круговой селектор, как в игре
+      theme: "v",
+      accent: "#7fd4ff",
+      tagline: "Los Santos · круговой селектор станций",
+      stations: [
+        { id: "surf",      name: "Blaine County Surf", tagline: "west coast / surf rock", accent: "#4fc3f7", bg: "#08303f", motif: "wave",     demo: { key: "D",  bpm: 104, prog: "surf", drums: "rock",  noise: 0.02 } },
+        { id: "rock",      name: "Vinewood Rock",      tagline: "classic rock",           accent: "#ff5b4a", bg: "#3a0d09", motif: "bolt",     demo: { key: "E",  bpm: 128, prog: "rock",  drums: "rock",  noise: 0.02 } },
+        { id: "stars",     name: "Fame or Shame FM",   tagline: "talk / celebrity",       accent: "#ffd54a", bg: "#3a2c05", motif: "star",     demo: { key: "A",  bpm: 96,  prog: "talk",  drums: "none",  noise: 0.05 } },
+        { id: "santos",    name: "Los Santos FM",      tagline: "hip-hop / west coast",   accent: "#8dff6a", bg: "#10300c", motif: "mic",      demo: { key: "G",  bpm: 92,  prog: "hop",   drums: "hop",   noise: 0.03 } },
+        { id: "space",     name: "Space 103.7",        tagline: "funk / soul",            accent: "#c07bff", bg: "#241038", motif: "planet",   demo: { key: "F",  bpm: 100, prog: "funk",  drums: "funk",  noise: 0.02 } },
+        { id: "vinyl",     name: "Vinewood Vinyl",     tagline: "soul / rare groove",     accent: "#ffb15c", bg: "#3a2109", motif: "vinyl",    demo: { key: "C",  bpm: 96,  prog: "soul",  drums: "funk",  noise: 0.07 } },
+        { id: "lowrider",  name: "Lowrider Classics",  tagline: "chicano / oldies",       accent: "#6affd4", bg: "#06322b", motif: "car",      demo: { key: "Bb", bpm: 88,  prog: "soul",  drums: "hop",   noise: 0.04 } },
+        { id: "country",   name: "Rebel Country",      tagline: "country / outlaw",       accent: "#ffc46a", bg: "#38240a", motif: "hat",      demo: { key: "G",  bpm: 112, prog: "country", drums: "country", noise: 0.03 } },
+        { id: "reggae",    name: "Blue Palms Reggae",  tagline: "reggae / dub",           accent: "#6bff9c", bg: "#0a3018", motif: "palm",     demo: { key: "A",  bpm: 76,  prog: "reggae", drums: "reggae", noise: 0.02 } },
+        { id: "dance",     name: "Neon Dancefloor",    tagline: "house / electro",        accent: "#ff5ce1", bg: "#350a2c", motif: "disc",     demo: { key: "F",  bpm: 124, prog: "house", drums: "house", noise: 0.01 } },
+        { id: "ambient",   name: "Nightcall Ambient",  tagline: "ambient / chillwave",    accent: "#8fd0ff", bg: "#0c1c33", motif: "moon",     demo: { key: "D",  bpm: 72,  prog: "amb",   drums: "none",  noise: 0.05 } },
+        { id: "metal",     name: "Iron Skull Metal",   tagline: "metal / hard",           accent: "#c9ced6", bg: "#17181b", motif: "skull",    demo: { key: "E",  bpm: 148, prog: "metal", drums: "metal", noise: 0.02 } },
+        { id: "jazz",      name: "Vinewood Jazz Club", tagline: "jazz / lounge",          accent: "#ffd9a0", bg: "#2e2010", motif: "note",     demo: { key: "Eb", bpm: 84,  prog: "jazz",  drums: "jazz",  noise: 0.06 } },
+        { id: "blaine",    name: "Blaine County Radio",tagline: "country talk / AM",      accent: "#e8b25c", bg: "#33230c", motif: "cactus",   demo: { key: "D",  bpm: 100, prog: "country", drums: "none", noise: 0.09 } }
+      ]
+    },
+
+    /* --------------------------------------------------------------- IV */
+    {
+      id: "iv",
+      num: "IV",
+      name: "Grand Theft Auto IV",
+      year: 2008,
+      city: "Liberty City",
+      ui: "wheel",
+      theme: "iv",
+      accent: "#b9c4a8",
+      tagline: "Liberty City · грязный мегаполис, приглушённая палитра",
+      stations: [
+        { id: "liberty", name: "Liberty Rock",       tagline: "classic rock",        accent: "#d9e0cf", bg: "#1c1f18", motif: "bolt",   demo: { key: "A",  bpm: 122, prog: "rock",  drums: "rock",  noise: 0.03 } },
+        { id: "beat",    name: "The Beat 102",       tagline: "hip-hop",             accent: "#e7c98a", bg: "#241f13", motif: "mic",    demo: { key: "F",  bpm: 90,  prog: "hop",   drums: "hop",   noise: 0.03 } },
+        { id: "jazz",    name: "Jazz Nation",        tagline: "jazz / standards",    accent: "#cfd8e3", bg: "#151b22", motif: "note",   demo: { key: "Bb", bpm: 82,  prog: "jazz",  drums: "jazz",  noise: 0.06 } },
+        { id: "electro", name: "Electro Liberty",    tagline: "electro / dance",     accent: "#9fd8ff", bg: "#101d28", motif: "disc",   demo: { key: "C",  bpm: 126, prog: "house", drums: "house", noise: 0.01 } },
+        { id: "kifflom", name: "Kifflom Radio",      tagline: "weird / talk",        accent: "#c9b6ff", bg: "#1a1428", motif: "star",   demo: { key: "D",  bpm: 98,  prog: "talk",  drums: "none",  noise: 0.07 } },
+        { id: "russian", name: "Vladivostok FM",     tagline: "eastern / russian",   accent: "#ffb3a0", bg: "#2a1410", motif: "globe",  demo: { key: "E",  bpm: 108, prog: "world", drums: "rock",  noise: 0.04 } },
+        { id: "irish",   name: "McReary Irish Pub",  tagline: "irish / folk",        accent: "#a8e6a0", bg: "#12240f", motif: "hat",    demo: { key: "G",  bpm: 116, prog: "country", drums: "country", noise: 0.03 } },
+        { id: "sanjuan", name: "San Juan Sounds",    tagline: "latin / reggaeton",   accent: "#ffd27a", bg: "#2a1e08", motif: "palm",   demo: { key: "A",  bpm: 96,  prog: "reggae", drums: "hop",  noise: 0.02 } },
+        { id: "lrr",     name: "LRR 92.9 Talk",      tagline: "talk radio / AM",     accent: "#e3ddc9", bg: "#201e16", motif: "wave",   demo: { key: "C",  bpm: 92,  prog: "talk",  drums: "none",  noise: 0.10 } },
+        { id: "fusion",  name: "Fusion FM",          tagline: "smooth / acid jazz",  accent: "#9fe0d0", bg: "#0e211d", motif: "vinyl",  demo: { key: "Eb", bpm: 88,  prog: "soul",  drums: "funk",  noise: 0.05 } }
+      ]
+    },
+
+    /* -------------------------------------------------------------- SA */
+    {
+      id: "sa",
+      num: "SA",
+      name: "GTA: San Andreas",
+      year: 2004,
+      city: "San Andreas",
+      ui: "list",              // прямоугольный список, как в PS2-версии
+      theme: "sa",
+      accent: "#ffb03a",
+      tagline: "Grove Street · список станций в стиле PS2",
+      stations: [
+        { id: "groove",  name: "Grove Street FM",   tagline: "west coast rap",    accent: "#7cff5a", bg: "#122b0a", motif: "mic",    demo: { key: "G",  bpm: 92,  prog: "hop",   drums: "hop",   noise: 0.03 } },
+        { id: "krose",   name: "K-Rose Country",    tagline: "country",           accent: "#ffcb6a", bg: "#33230a", motif: "hat",    demo: { key: "D",  bpm: 110, prog: "country", drums: "country", noise: 0.03 } },
+        { id: "bounce",  name: "Bounce FM",         tagline: "funk / soul",       accent: "#ff8ad4", bg: "#33092a", motif: "disc",   demo: { key: "F",  bpm: 102, prog: "funk",  drums: "funk",  noise: 0.02 } },
+        { id: "sfurg",   name: "SF URG Rock",       tagline: "rock",              accent: "#ff6a4a", bg: "#331009", motif: "bolt",   demo: { key: "E",  bpm: 130, prog: "rock",  drums: "rock",  noise: 0.02 } },
+        { id: "radiox",  name: "Radio X",           tagline: "alt / grunge",      accent: "#d0d6de", bg: "#171a1e", motif: "skull",  demo: { key: "A",  bpm: 120, prog: "metal", drums: "metal", noise: 0.02 } },
+        { id: "kdst",    name: "K-DST The Dust",    tagline: "classic rock",      accent: "#ffc98a", bg: "#301d0a", motif: "vinyl",  demo: { key: "C",  bpm: 108, prog: "rock",  drums: "rock",  noise: 0.05 } },
+        { id: "kjawz",   name: "K-JAWZ Hip-Hop",    tagline: "hip-hop classics",  accent: "#8affd4", bg: "#07302a", motif: "car",    demo: { key: "Bb", bpm: 88,  prog: "hop",   drums: "hop",   noise: 0.03 } },
+        { id: "master",  name: "Master Sounds",     tagline: "rare groove",       accent: "#ffd54a", bg: "#33280a", motif: "vinyl",  demo: { key: "F",  bpm: 98,  prog: "soul",  drums: "funk",  noise: 0.07 } },
+        { id: "playback",name: "Playback FM",       tagline: "house / electro",   accent: "#ff5ce1", bg: "#33092b", motif: "disc",   demo: { key: "F",  bpm: 124, prog: "house", drums: "house", noise: 0.01 } },
+        { id: "kchat",   name: "K-CHAT Talk",       tagline: "talk radio",        accent: "#e0dac4", bg: "#221f14", motif: "wave",   demo: { key: "D",  bpm: 90,  prog: "talk",  drums: "none",  noise: 0.09 } }
+      ]
+    },
+
+    /* -------------------------------------------------------------- VC */
+    {
+      id: "vc",
+      num: "VC",
+      name: "GTA: Vice City",
+      year: 2002,
+      city: "Vice City",
+      ui: "list",
+      theme: "vc",
+      accent: "#ff4fa3",
+      tagline: "1986 · неон, пальмы, кассеты",
+      stations: [
+        { id: "flash",  name: "Flash FM",        tagline: "80s pop",        accent: "#ff4fa3", bg: "#33091f", motif: "disc",   demo: { key: "C",  bpm: 118, prog: "house", drums: "house", noise: 0.02 } },
+        { id: "wave",   name: "Wave 103",        tagline: "new wave",       accent: "#4fd8ff", bg: "#06283a", motif: "wave",   demo: { key: "A",  bpm: 122, prog: "rock",  drums: "rock",  noise: 0.02 } },
+        { id: "vrock",  name: "V-Rock",          tagline: "hard rock",      accent: "#ff5b3a", bg: "#33100a", motif: "bolt",   demo: { key: "E",  bpm: 134, prog: "metal", drums: "metal", noise: 0.02 } },
+        { id: "emotion",name: "Emotion 98.3",    tagline: "power ballads",  accent: "#ff9ac4", bg: "#331023", motif: "moon",   demo: { key: "D",  bpm: 78,  prog: "amb",   drums: "none",  noise: 0.05 } },
+        { id: "espeso", name: "Radio Espeso",    tagline: "latin / salsa",  accent: "#ffc44f", bg: "#33250a", motif: "palm",   demo: { key: "G",  bpm: 104, prog: "reggae", drums: "reggae", noise: 0.02 } },
+        { id: "vcs",    name: "VCS Fresh",       tagline: "hip-hop 80s",    accent: "#8aff6a", bg: "#133009", motif: "mic",    demo: { key: "F",  bpm: 94,  prog: "hop",   drums: "hop",   noise: 0.03 } }
+      ]
+    },
+
+    /* ------------------------------------------------------------- III */
+    {
+      id: "iii",
+      num: "III",
+      name: "GTA III",
+      year: 2001,
+      city: "Liberty City",
+      ui: "list",
+      theme: "iii",
+      accent: "#8ee06a",
+      tagline: "2001 · первое 3D, зелёный HUD",
+      stations: [
+        { id: "rise",   name: "Rise FM",         tagline: "dance / trance",   accent: "#8ee06a", bg: "#0f2a08", motif: "disc",  demo: { key: "F",  bpm: 128, prog: "house", drums: "house", noise: 0.01 } },
+        { id: "lips",   name: "Lips 106",        tagline: "pop hits",         accent: "#ff8ad4", bg: "#33092a", motif: "star",  demo: { key: "C",  bpm: 116, prog: "house", drums: "house", noise: 0.02 } },
+        { id: "game",   name: "Game Radio",      tagline: "hip-hop",          accent: "#ffd54a", bg: "#33280a", motif: "mic",   demo: { key: "G",  bpm: 92,  prog: "hop",   drums: "hop",   noise: 0.03 } },
+        { id: "msx",    name: "MSX FM",          tagline: "drum & bass",      accent: "#6affd4", bg: "#06302b", motif: "bolt",  demo: { key: "A",  bpm: 150, prog: "house", drums: "metal", noise: 0.02 } },
+        { id: "head",   name: "Head Radio",      tagline: "chill / lounge",   accent: "#8fd0ff", bg: "#0c1c33", motif: "moon",  demo: { key: "D",  bpm: 76,  prog: "amb",   drums: "none",  noise: 0.05 } },
+        { id: "double", name: "Double Clef",     tagline: "opera / classical",accent: "#e6dcc4", bg: "#241f14", motif: "note",  demo: { key: "Eb", bpm: 70,  prog: "jazz",  drums: "none",  noise: 0.04 } },
+        { id: "chatterbox", name: "Chatterbox",  tagline: "talk radio",       accent: "#d8d2c0", bg: "#211f16", motif: "wave",  demo: { key: "C",  bpm: 88,  prog: "talk",  drums: "none",  noise: 0.10 } }
+      ]
+    }
+  ]
+};
+
+/* =========================================================================
+   Служебные функции конфига + генератор иконок станций (чистый SVG,
+   без внешних картинок — чтобы не зависеть от чужих логотипов).
+   ========================================================================= */
+
+(function () {
+  const CFG = window.RADIO_CONFIG;
+
+  CFG.getGame = (id) => CFG.games.find((g) => g.id === id) || CFG.games[0];
+  CFG.gameIds = () => CFG.games.map((g) => g.id);
+
+  /** Все треки станции в порядке воспроизведения */
+  CFG.tracksOf = (st) => (st && st.tracks && st.tracks.length ? st.tracks : []);
+
+  /**
+   * Куда грузить звук: file → audio/<...>, stream → как есть, demo → синтез
+   */
+  CFG.resolveSrc = (t, game) => {
+    if (!t) return null;
+    if (t.type === "stream") return t.src;
+    if (t.type === "file") {
+      const s = t.src || "";
+      return /^https?:|^\/|^\.\.\//.test(s) ? s : CFG.meta.audioBase + s;
+    }
+    return null; // demo
+  };
+
+  /** Какую музыку заводить: есть file/stream → HTMLAudio, иначе → синтез */
+  CFG.stationMode = (st) =>
+    CFG.tracksOf(st).some((t) => t.type === "file" || t.type === "stream") ? "audio" : "demo";
+
+  /* ------------------------------ иконки ------------------------------ */
+
+  const M = {
+    wave:  '<path d="M4 14c2.4-3.4 4.2-3.4 6.6 0s4.2 3.4 6.6 0 3.2-2.6 4.4-1.2" fill="none" stroke="@A@" stroke-width="2.2" stroke-linecap="round"/><path d="M4 20c2.4-3.4 4.2-3.4 6.6 0s4.2 3.4 6.6 0 3.2-2.6 4.4-1.2" fill="none" stroke="@A@" stroke-width="2.2" stroke-linecap="round" opacity=".55"/>',
+    bolt:  '<path d="M18 3 8 17h6l-2 12 12-16h-7z" fill="@A@"/>',
+    star:  '<path d="M16 3.5 19.6 11l8.1 1.1-5.9 5.7 1.5 8-7.3-3.9-7.3 3.9 1.5-8L4.3 12.1 12.4 11z" fill="@A@"/>',
+    vinyl: '<circle cx="16" cy="16" r="12" fill="none" stroke="@A@" stroke-width="2.2"/><circle cx="16" cy="16" r="7.5" fill="none" stroke="@A@" stroke-width="1.2" opacity=".5"/><circle cx="16" cy="16" r="2.6" fill="@A@"/>',
+    mic:   '<rect x="12" y="4" width="8" height="14" rx="4" fill="@A@"/><path d="M8 15a8 8 0 0 0 16 0" fill="none" stroke="@A@" stroke-width="2.2" stroke-linecap="round"/><path d="M16 23v4M11 28h10" stroke="@A@" stroke-width="2.2" stroke-linecap="round"/>',
+    palm:  '<path d="M16 29c-1-8-1-13 1-17" stroke="@A@" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M17 12c-4-4-9-4-12-1 4-1 8 0 12 1zm0 0c4-4 9-4 12-1-4-1-8 0-12 1zm0 0c-1-5 2-9 6-10-3 3-5 6-6 10zm0 0c1-5-2-9-6-10 3 3 5 6 6 10z" fill="@A@" opacity=".9"/>',
+    skull: '<path d="M16 4c6.6 0 11 4.5 11 10.4 0 3.6-1.6 5.6-3 6.8-.7.6-1 1.2-1 2v1.4c0 1.4-1.1 2.4-2.5 2.4h-9c-1.4 0-2.5-1-2.5-2.4v-1.4c0-.8-.3-1.4-1-2-1.4-1.2-3-3.2-3-6.8C5 8.5 9.4 4 16 4z" fill="@A@"/><circle cx="11.5" cy="14" r="2.6" fill="@B@"/><circle cx="20.5" cy="14" r="2.6" fill="@B@"/><path d="M16 18.5 14 22h4z" fill="@B@"/>',
+    disc:  '<circle cx="16" cy="16" r="12" fill="@A@" opacity=".18"/><circle cx="16" cy="16" r="12" fill="none" stroke="@A@" stroke-width="2"/><circle cx="16" cy="16" r="3" fill="@A@"/><path d="M16 4v5M28 16h-5M16 28v-5M4 16h5" stroke="@A@" stroke-width="1.6" opacity=".6"/>',
+    car:   '<path d="M5 20.5 7.5 13A3 3 0 0 1 10.4 11h11.2A3 3 0 0 1 24.5 13L27 20.5v5a1 1 0 0 1-1 1h-2.5a1 1 0 0 1-1-1V25H9.5v1.5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z" fill="@A@"/><path d="M9.4 19.2h13.2L21 13.6h-10z" fill="@B@" opacity=".55"/><circle cx="10" cy="22" r="1.4" fill="@B@"/><circle cx="22" cy="22" r="1.4" fill="@B@"/>',
+    moon:  '<path d="M21 4a12 12 0 1 0 9 19A12.5 12.5 0 0 1 21 4z" fill="@A@"/><circle cx="9" cy="9" r="1.1" fill="@A@" opacity=".6"/><circle cx="6" cy="15" r=".8" fill="@A@" opacity=".45"/>',
+    hat:   '<path d="M4 22h24c0 4-5.4 6-12 6S4 26 4 22z" fill="@A@"/><path d="M10 22c0-8 1.6-13 6-13s6 5 6 13z" fill="@A@" opacity=".75"/><path d="M9.6 19.5h12.8" stroke="@B@" stroke-width="2" opacity=".6"/>',
+    note:  '<circle cx="11" cy="24" r="4.2" fill="@A@"/><circle cx="25" cy="21" r="4.2" fill="@A@"/><path d="M15.2 24V10l14-4v15" fill="none" stroke="@A@" stroke-width="2.6"/><path d="M15.2 13.2 29.2 9.4" stroke="@A@" stroke-width="2.6"/>',
+    globe: '<circle cx="16" cy="16" r="12" fill="none" stroke="@A@" stroke-width="2.2"/><ellipse cx="16" cy="16" rx="5.4" ry="12" fill="none" stroke="@A@" stroke-width="1.6"/><path d="M4.6 12h22.8M4.6 20h22.8" stroke="@A@" stroke-width="1.6"/>',
+    dice:  '<rect x="5" y="5" width="22" height="22" rx="5" fill="none" stroke="@A@" stroke-width="2.2"/><circle cx="11.5" cy="11.5" r="2.1" fill="@A@"/><circle cx="20.5" cy="20.5" r="2.1" fill="@A@"/><circle cx="16" cy="16" r="2.1" fill="@A@"/>',
+    money: '<rect x="3.5" y="8.5" width="25" height="15" rx="2.5" fill="none" stroke="@A@" stroke-width="2.2"/><circle cx="16" cy="16" r="4" fill="none" stroke="@A@" stroke-width="2"/><path d="M7.5 12v8M24.5 12v8" stroke="@A@" stroke-width="1.6" opacity=".7"/>',
+    cactus:'<path d="M14 29V13a2 2 0 0 1 4 0v16z" fill="@A@"/><path d="M14 20H9a2 2 0 0 1-2-2v-4a2 2 0 0 1 4 0v3h3zM18 22h4a2 2 0 0 0 2-2v-6a2 2 0 0 0-4 0v5h-2z" fill="@A@" opacity=".8"/>',
+    heart: '<path d="M16 28S4 20.8 4 13.2A6.7 6.7 0 0 1 16 9.6a6.7 6.7 0 0 1 12 3.6C28 20.8 16 28 16 28z" fill="@A@"/>',
+    cassette:'<rect x="3" y="8" width="26" height="17" rx="2.5" fill="none" stroke="@A@" stroke-width="2.2"/><circle cx="11.5" cy="16" r="3.4" fill="none" stroke="@A@" stroke-width="2"/><circle cx="20.5" cy="16" r="3.4" fill="none" stroke="@A@" stroke-width="2"/><path d="M8 25h16" stroke="@A@" stroke-width="1.8" opacity=".6"/>',
+    antenna:'<circle cx="16" cy="24" r="3" fill="@A@"/><path d="M9.5 17.5a9 9 0 0 1 13 0M6 13.5a14 14 0 0 1 20 0" fill="none" stroke="@A@" stroke-width="2.2" stroke-linecap="round"/>'
+  };
+
+  CFG.motifs = () => Object.keys(M);
+
+  CFG.stationIcon = (st, size = 72, rounded = 14) => {
+    const acc = st.accent || "#9ad";
+    const bg = st.bg || "#101318";
+    // ВНИМАНИЕ: меняем только токены @A@/@B@ (а не буквы C/B — иначе ломается
+    // SVG-команда кривой "C" в path).
+    const art = (M[st.motif] || M.disc).replace(/@A@/g, acc).replace(/@B@/g, bg);
+    const initials = (st.name || "?")
+      .split(/\s+/)
+      .filter((w) => /[A-Za-zА-Яа-я0-9]/.test(w))
+      .slice(0, 2)
+      .map((w) => w[0].toUpperCase())
+      .join("");
+    return `<svg viewBox="0 0 32 32" width="${size}" height="${size}" aria-hidden="true">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="${bg}"/>
+          <stop offset="1" stop-color="#05070a"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="32" height="32" rx="${rounded / (size / 32) / 4 + 2}" fill="url(#g)" stroke="${acc}" stroke-opacity=".45" stroke-width=".8"/>
+      <g opacity=".95">${art}</g>
+      <text x="16" y="31" font-size="3.4" text-anchor="middle" font-family="Inter,system-ui,sans-serif"
+            font-weight="700" letter-spacing=".2" fill="${acc}" opacity=".65">${initials}</text>
+    </svg>`;
+  };
+})();
+
+</script>
+<script>
+/* =========================================================================
+   RadioAudio — звуковой движок сайта
+   -------------------------------------------------------------------------
+   Два режима:
+     1) demo  — процедурная музыка на WebAudio (аккорды, бас, барабаны,
+                шум винила/эфира). Работает без единого файла.
+     2) audio — обычный <audio> с плейлистом (локальные mp3 или внешние
+                стримы), кроссфейдом и чтением ID3-тегов.
+
+   Плюс: эффект «переключения волны» (свип + треск), аналитер для эквалайзера.
+   ========================================================================= */
+
+(function () {
+  const NOTE = { C: 0, "C#": 1, Db: 1, D: 2, "D#": 3, Eb: 3, E: 4, F: 5, "F#": 6, Gb: 6, G: 7, "G#": 8, Ab: 8, A: 9, "A#": 10, Bb: 10, B: 11 };
+
+  const midi = (n) => 440 * Math.pow(2, (n - 69) / 12);
+  const scale = (root, i) => {
+    const deg = ((i % 7) + 7) % 7;
+    const oct = Math.floor(i / 7);
+    const steps = [0, 2, 4, 5, 7, 9, 11];
+    return root + steps[deg] + oct * 12;
+  };
+
+  /* Аккордовые прогрессии — набор ступеней (в долях такта 4/4) */
+  const PROG = {
+    surf:    [{ b: 0, s: [0, 4, 7] }, { b: 2, s: [5, 9, 12] }, { b: 4, s: [7, 11, 14] }, { b: 6, s: [0, 4, 7] },
+              { b: 8, s: [9, 12, 16] }, { b: 12, s: [7, 11, 14] }],
+    house:   [{ b: 0, s: [0, 3, 7] }, { b: 2, s: [5, 9, 12] }, { b: 4, s: [3, 7, 10] }, { b: 6, s: [7, 11, 14] }],
+    rock:    [{ b: 0, s: [0, 4, 7] }, { b: 4, s: [5, 9, 12] }, { b: 8, s: [7, 11, 14] }, { b: 10, s: [0, 4, 7] }],
+    metal:   [{ b: 0, s: [0, 7] }, { b: 2, s: [1, 8] }, { b: 4, s: [0, 7] }, { b: 6, s: [6, 10] }, { b: 8, s: [0, 7] }, { b: 10, s: [3, 10] }, { b: 12, s: [5, 12] }, { b: 14, s: [0, 7] }],
+    hop:     [{ b: 0, s: [0, 3, 7, 10] }, { b: 4, s: [5, 8, 12, 15] }],
+    funk:    [{ b: 0, s: [0, 4, 7, 10] }, { b: 2, s: [0, 4, 7, 10] }, { b: 4, s: [3, 7, 10, 14] }, { b: 6, s: [5, 9, 12, 15] }],
+    soul:    [{ b: 0, s: [0, 4, 7, 11] }, { b: 4, s: [2, 5, 9] }, { b: 8, s: [7, 11, 14] }, { b: 12, s: [0, 4, 7] }],
+    jazz:    [{ b: 0, s: [0, 4, 7, 11] }, { b: 2, s: [2, 5, 9, 12] }, { b: 4, s: [7, 11, 14, 17] }, { b: 6, s: [0, 4, 7, 10] }],
+    amb:     [{ b: 0, s: [0, 7, 12] }, { b: 8, s: [5, 12, 17] }],
+    reggae:  [{ b: 0, s: [0, 4, 7] }, { b: 4, s: [5, 9, 12] }, { b: 6, s: [7, 11, 14] }],
+    country: [{ b: 0, s: [0, 4, 7] }, { b: 4, s: [5, 9, 12] }, { b: 8, s: [7, 11, 14] }, { b: 12, s: [0, 4, 7] }],
+    talk:    [{ b: 0, s: [0, 7, 12] }],
+    world:   [{ b: 0, s: [0, 3, 7, 10] }, { b: 4, s: [5, 8, 12] }, { b: 8, s: [3, 7, 10] }]
+  };
+
+  const DRUMS = {
+    house:   { kick: [0, 1, 2, 3], hat: [0.5, 1.5, 2.5, 3.5], clap: [1, 3] },
+    rock:    { kick: [0, 2.5], snare: [1, 3], hat: [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5] },
+    metal:   { kick: [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5], snare: [1, 3], hat: [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75] },
+    hop:     { kick: [0, 1.75], snare: [1, 3], hat: [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.75] },
+    funk:    { kick: [0, 2.25], snare: [1, 3], hat: [0, 0.25, 0.75, 1, 1.5, 1.75, 2, 2.5, 3, 3.5] },
+    reggae:  { kick: [2], snare: [1, 3], hat: [0.5, 1.5, 2.5, 3.5] },
+    country: { kick: [0, 2], snare: [1, 3], hat: [0, 1, 2, 3] },
+    surf:    { kick: [0, 2], snare: [1, 3], hat: [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5] },
+    jazz:    { kick: [], snare: [], hat: [0, 0.66, 1.33, 2, 2.66, 3.33] },
+    none:    { kick: [], snare: [], hat: [] }
+  };
+
+  const LEAD = { house: [0, 7, 12, 10, 7, 12, 14, 10], rock: [0, 3, 7, 10, 7, 3, 0, -5], metal: [0, 1, 0, 3, 0, 1, 5, 3], hop: [0, 3, 5, 3, 0, -2, 0, 3], funk: [0, 3, 7, 10, 12, 10, 7, 3], soul: [0, 4, 7, 4, 9, 7, 4, 0], jazz: [0, 2, 4, 6, 4, 2, 7, 4], amb: [0, 7, 12, 7], reggae: [0, 3, 7, 3], country: [0, 2, 4, 2, 7, 4, 2, 0], talk: [], world: [0, 3, 5, 7, 5, 3, 0, -2] };
+
+  class RadioAudio {
+    constructor() {
+      this.ctx = null;
+      this.master = null;
+      this.analyser = null;
+      this.data = null;
+      this.volume = 0.8;
+      this.muted = false;
+      this.mode = null;            // "demo" | "audio"
+      this.station = null;
+      this._engine = null;
+      this._el = null;
+      this._playlist = [];
+      this._index = 0;
+      this._onEnd = null;
+      this._onMeta = null;
+      this._onError = null;
+      this._fadeTimer = null;
+    }
+
+    /* ----------------------------- WebAudio ---------------------------- */
+    ensure() {
+      if (!this.ctx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) throw new Error("WebAudio не поддерживается этим браузером");
+        this.ctx = new AC();
+        this.master = this.ctx.createGain();
+        this.master.gain.value = this.muted ? 0 : this.volume;
+
+        this.analyser = this.ctx.createAnalyser();
+        this.analyser.fftSize = 256;
+        this.analyser.smoothingTimeConstant = 0.78;
+        this.data = new Uint8Array(this.analyser.frequencyBinCount);
+
+        this.master.connect(this.analyser);
+        this.analyser.connect(this.ctx.destination);
+      }
+      if (this.ctx.state === "suspended") this.ctx.resume();
+      return this.ctx;
+    }
+
+    setVolume(v) {
+      this.volume = Math.max(0, Math.min(1, v));
+      if (this.master) this.master.gain.setTargetAtTime(this.muted ? 0 : this.volume, this.ctx.currentTime, 0.05);
+      if (this._el) this._el.volume = this.volume;
+    }
+    setMuted(m) {
+      this.muted = !!m;
+      this.setVolume(this.volume);
+    }
+    spectrum() {
+      if (!this.analyser) return null;
+      this.analyser.getByteFrequencyData(this.data);
+      return this.data;
+    }
+
+    /* ------------------------ процедурное демо ------------------------- */
+    startDemo(station) {
+      const ctx = this.ensure();
+      this.stopEngine();
+      const cfg = station.demo || {};
+      const root = (NOTE[cfg.key] != null ? NOTE[cfg.key] : 0) + 48;
+      const bpm = cfg.bpm || 100;
+      const prog = PROG[cfg.prog] || PROG.rock;
+      const drums = DRUMS[cfg.drums] || DRUMS.none;
+      const leadNotes = LEAD[cfg.prog] || [];
+      const loopLen = 16;                 // 4 такта
+      const beat = 60 / bpm;
+
+      const bus = ctx.createGain();
+      bus.gain.value = 0;
+      bus.connect(this.master);
+
+      // лёгкий «эфирный» фильтр + реверб
+      const tone = ctx.createBiquadFilter();
+      tone.type = "lowpass";
+      tone.frequency.value = cfg.prog === "talk" ? 2600 : 9000;
+      tone.Q.value = 0.6;
+      tone.connect(bus);
+
+      const rev = ctx.createConvolver();
+      rev.buffer = this._impulse(1.9, 2.4);
+      const revGain = ctx.createGain();
+      revGain.gain.value = cfg.prog === "amb" ? 0.5 : 0.22;
+      rev.connect(revGain);
+      revGain.connect(bus);
+
+      const noise = ctx.createBufferSource();
+      noise.buffer = this._noiseBuffer(4);
+      noise.loop = true;
+      const nFilter = ctx.createBiquadFilter();
+      nFilter.type = "bandpass";
+      nFilter.frequency.value = 1400;
+      nFilter.Q.value = 0.5;
+      const nGain = ctx.createGain();
+      nGain.gain.value = (cfg.noise || 0.02) * 0.35;
+      noise.connect(nFilter); nFilter.connect(nGain); nGain.connect(bus);
+      noise.start();
+
+      const out = ctx.createGain();
+      out.gain.value = 1;
+      out.connect(tone);
+      out.connect(rev);
+
+      const eng = { bus, noise, out, timer: null, t0: ctx.currentTime + 0.08, next: ctx.currentTime + 0.08, step: 0, station };
+
+      const kick = (t) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = "sine";
+        o.frequency.setValueAtTime(150, t);
+        o.frequency.exponentialRampToValueAtTime(45, t + 0.11);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.85, t + 0.006);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+        o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.3);
+      };
+      const snare = (t) => {
+        const s = ctx.createBufferSource(); s.buffer = this._noiseBuffer(0.3);
+        const f = ctx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 1300;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.4, t);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+        s.connect(f); f.connect(g); g.connect(out); s.start(t); s.stop(t + 0.2);
+      };
+      const hat = (t, open) => {
+        const s = ctx.createBufferSource(); s.buffer = this._noiseBuffer(0.2);
+        const f = ctx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 7000;
+        const g = ctx.createGain();
+        const d = open ? 0.12 : 0.045;
+        g.gain.setValueAtTime(0.16, t);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+        s.connect(f); f.connect(g); g.connect(out); s.start(t); s.stop(t + d + 0.05);
+      };
+      const pad = (t, dur, midis, amp = 0.075) => {
+        midis.forEach((m, i) => {
+          const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+          o.type = cfg.prog === "metal" || cfg.prog === "rock" ? "sawtooth" : "triangle";
+          o.frequency.value = midi(m);
+          o.detune.value = (i - 1) * 7;
+          f.type = "lowpass"; f.frequency.value = cfg.prog === "amb" ? 1400 : 2600;
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.linearRampToValueAtTime(amp, t + Math.min(0.4, dur * 0.3));
+          g.gain.setValueAtTime(amp, t + dur * 0.7);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+          o.connect(f); f.connect(g); g.connect(out); o.start(t); o.stop(t + dur + 0.05);
+        });
+      };
+      const bass = (t, dur, m) => {
+        const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+        o.type = cfg.prog === "hop" ? "sine" : "sawtooth";
+        o.frequency.value = midi(m - 12);
+        f.type = "lowpass"; f.frequency.value = cfg.prog === "hop" ? 320 : 700;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.26, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.95);
+        o.connect(f); f.connect(g); g.connect(out); o.start(t); o.stop(t + dur + 0.05);
+      };
+      const lead = (t, m) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = "square";
+        o.frequency.value = midi(m + 12);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.055, t + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + beat * 0.45);
+        o.connect(g); g.connect(out); o.start(t); o.stop(t + beat * 0.5);
+      };
+
+      const hit = (arr, v) => !!arr && arr.indexOf(v) !== -1;
+      const scheduleStep = (step) => {
+        const t = eng.next;
+        // step = номер восьмой; доля в такте = step/2 (целые и .5 — без float-дрейфа)
+        const pos = step % (loopLen * 2);              // 0..31
+        const bar = Math.round(pos / 2 * 100) / 100;   // 0..15.5
+        const chord = prog.reduce((a, c) => (c.b <= bar ? c : a), prog[0]);
+        const inBar = bar % 4;                         // доля внутри такта 0..3.5
+        if (step % 8 === 0) {                          // аккорд на каждый такт
+          const dur = beat * 4 * (cfg.prog === "amb" ? 2 : 1);
+          pad(t, dur, chord.s.map((s) => root + s), cfg.prog === "amb" ? 0.05 : 0.075);
+        }
+        if (step % 4 === 0) bass(t, beat * 1.6, root + chord.s[0]);
+        if (leadNotes.length && step % 4 === 2 && Math.random() < 0.65) {
+          lead(t, root + leadNotes[(step >> 2) % leadNotes.length] + chord.s[0]);
+        }
+        if (hit(drums.kick, inBar)) kick(t);
+        if (hit(drums.snare, inBar)) snare(t);
+        if (hit(drums.hat, inBar)) hat(t, inBar === 1.5 || inBar === 3.5);
+      };
+
+      const pump = () => {
+        const ahead = 0.25;
+        while (eng.next < ctx.currentTime + ahead) {
+          scheduleStep(eng.step);
+          eng.step++;
+          eng.next = eng.t0 + eng.step * (beat / 2);   // шаг = восьмая, без дрейфа
+        }
+        eng.timer = setTimeout(pump, 60);
+      };
+
+      bus.gain.setValueAtTime(0.0001, ctx.currentTime);
+      bus.gain.linearRampToValueAtTime(0.85, ctx.currentTime + 0.9);
+      pump();
+      this._engine = eng;
+      this.mode = "demo";
+      this.station = station;
+      return true;
+    }
+
+    stopEngine() {
+      const e = this._engine;
+      this._engine = null;
+      if (!e) return;
+      clearTimeout(e.timer);
+      try {
+        const t = this.ctx.currentTime;
+        e.bus.gain.cancelScheduledValues(t);
+        e.bus.gain.setValueAtTime(e.bus.gain.value, t);
+        e.bus.gain.linearRampToValueAtTime(0.0001, t + 0.25);
+        setTimeout(() => { try { e.noise.stop(); e.bus.disconnect(); } catch (_) {} }, 350);
+      } catch (_) {}
+    }
+
+    _impulse(dur, decay) {
+      const ctx = this.ctx, len = Math.floor(ctx.sampleRate * dur);
+      const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (let c = 0; c < 2; c++) {
+        const d = buf.getChannelData(c);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+      }
+      return buf;
+    }
+    _noiseBuffer(dur) {
+      const ctx = this.ctx, len = Math.max(1, Math.floor(ctx.sampleRate * dur));
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      return buf;
+    }
+
+    /* ----------------------- файлы / стримы ---------------------------- */
+    /**
+     * @param {Array} tracks — [{type:'file'|'stream', src, title, artist}]
+     */
+    playTracks(station, tracks) {
+      this.stopEngine();
+      this._playlist = tracks.filter((t) => t.type === "file" || t.type === "stream");
+      if (!this._playlist.length) return this.startDemo(station);
+      this.ensure();
+      this.mode = "audio";
+      this.station = station;
+      this._index = 0;
+      this._attach();
+      this._loadCurrent(true);
+      return true;
+    }
+
+    _attach() {
+      if (this._el) return;
+      const el = new Audio();
+      el.crossOrigin = "anonymous";
+      el.preload = "auto";
+      el.volume = this.volume;
+      el.addEventListener("ended", () => this.next());
+      el.addEventListener("error", () => {
+        const t = this._playlist[this._index];
+        if (this._onError) this._onError(t, el.error);
+        // не зацикливаемся на битом файле — пробуем следующий
+        setTimeout(() => this.next(), 400);
+      });
+      el.addEventListener("loadedmetadata", () => {
+        if (this._onMeta) this._onMeta(this.currentTrack());
+      });
+      // подключаем к аналитеру (для эквалайзера)
+      try {
+        const src = this.ctx.createMediaElementSource(el);
+        src.connect(this.master);
+      } catch (_) { /* уже подключён */ }
+      this._el = el;
+    }
+
+    currentTrack() { return this._playlist[this._index] || null; }
+
+    _loadCurrent(autoplay) {
+      const t = this.currentTrack();
+      if (!t || !this._el) return;
+      this._el.src = t.type === "stream" ? t.src : RadioAudio.resolvePath(t.src);
+      this._el.load();
+      if (t.type === "stream") {
+        if (this._onMeta) this._onMeta({ title: t.title || "Прямой эфир", artist: t.artist || this.station?.name || "", live: true });
+      } else {
+        RadioAudio.readTags(this._el.src).then((tags) => {
+          const cur = this.currentTrack();
+          if (!cur || cur.src !== t.src) return;
+          if (tags.title || tags.artist) cur._tags = tags;
+          if (this._onMeta) this._onMeta({
+            title: tags.title || t.title || RadioAudio.fileName(t.src),
+            artist: tags.artist || t.artist || "",
+            album: tags.album || ""
+          });
+        }).catch(() => {});
+      }
+      if (autoplay) this._el.play().catch((e) => { if (this._onError) this._onError(t, e); });
+    }
+
+    next() {
+      if (!this._playlist.length) return;
+      this._index = (this._index + 1) % this._playlist.length;
+      this._loadCurrent(true);
+    }
+
+    playStation(station) {
+      const mode = window.RADIO_CONFIG.stationMode(station);
+      if (mode === "demo") return this.startDemo(station);
+      return this.playTracks(station, window.RADIO_CONFIG.tracksOf(station));
+    }
+
+    stop() {
+      this.stopEngine();
+      if (this._el) { try { this._el.pause(); this._el.removeAttribute("src"); this._el.load(); } catch (_) {} }
+      this._playlist = [];
+      this.mode = null;
+      this.station = null;
+    }
+
+    setCallbacks({ onMeta, onError, onEnd } = {}) {
+      if (onMeta) this._onMeta = onMeta;
+      if (onError) this._onError = onError;
+      if (onEnd) this._onEnd = onEnd;
+    }
+
+    /* «переключение волны» — короткий свип и треск, как в машине */
+    tuningFx() {
+      try {
+        const ctx = this.ensure(), t = ctx.currentTime;
+        const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+        o.type = "sawtooth";
+        o.frequency.setValueAtTime(300, t);
+        o.frequency.exponentialRampToValueAtTime(2400, t + 0.14);
+        f.type = "bandpass"; f.frequency.value = 1600; f.Q.value = 1.2;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.linearRampToValueAtTime(0.12, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+        o.connect(f); f.connect(g); g.connect(this.master);
+        o.start(t); o.stop(t + 0.25);
+      } catch (_) {}
+    }
+
+    /* ---------------------------- утилиты ------------------------------ */
+    static fileName(p) {
+      const s = String(p || "").split("?")[0].split("/").pop() || "";
+      return decodeURIComponent(s).replace(/\.[a-z0-9]{2,5}$/i, "").replace(/[_-]+/g, " ");
+    }
+    static resolvePath(src) {
+      if (/^https?:|^\/|^\.\.\//.test(src)) return src;
+      return window.RADIO_CONFIG.meta.audioBase + src;
+    }
+
+    /** Читаем ID3v2.3/2.4 из начала mp3 (TIT2/TPE1/TALB) */
+    static async readTags(url) {
+      const res = await fetch(url, { headers: { Range: "bytes=0-131071" } }).catch(() => fetch(url));
+      if (!res.ok) return {};
+      const buf = await res.arrayBuffer();
+      const dv = new DataView(buf);
+      if (buf.byteLength < 10 || dv.getUint8(0) !== 0x49 || dv.getUint8(1) !== 0x44 || dv.getUint8(2) !== 0x33) return {};
+      const size = ((dv.getUint8(6) & 0x7f) << 21) | ((dv.getUint8(7) & 0x7f) << 14) | ((dv.getUint8(8) & 0x7f) << 7) | (dv.getUint8(9) & 0x7f);
+      const end = Math.min(10 + size, buf.byteLength);
+      let p = 10, out = {};
+      const dec = (arr) => {
+        const bom = arr[0] === 0xff && arr[1] === 0xfe;
+        const u16 = arr[0] === 0x01 || arr[0] === 0x02;
+        const bytes = u16 ? arr.slice(2) : arr.slice(1);
+        try {
+          if (u16) {
+            let s = "";
+            for (let i = 0; i + 1 < bytes.length; i += 2) s += String.fromCharCode(bytes[i] | (bytes[i + 1] << 8));
+            return s;
+          }
+          return new TextDecoder(bom ? "utf-16" : arr[0] === 0x03 ? "utf-8" : "windows-1251").decode(bytes);
+        } catch (_) { return ""; }
+      };
+      while (p + 10 < end) {
+        const id = String.fromCharCode(dv.getUint8(p), dv.getUint8(p + 1), dv.getUint8(p + 2), dv.getUint8(p + 3));
+        if (!/^[A-Z0-9]{4}$/.test(id)) break;
+        let len;
+        if (dv.getUint8(3 + 0) && false) len = 0;
+        len = (dv.getUint8(p + 4) << 24) | (dv.getUint8(p + 5) << 16) | (dv.getUint8(p + 6) << 8) | dv.getUint8(p + 7);
+        // synchsafe у ID3v2.4
+        if (dv.getUint8(3) === 4) len = ((dv.getUint8(p + 4) & 0x7f) << 21) | ((dv.getUint8(p + 5) & 0x7f) << 14) | ((dv.getUint8(p + 6) & 0x7f) << 7) | (dv.getUint8(p + 7) & 0x7f);
+        if (len <= 0 || p + 10 + len > end) break;
+        const body = new Uint8Array(buf, p + 10, len);
+        if (id === "TIT2") out.title = dec(body).replace(/\0+$/, "").trim();
+        if (id === "TPE1") out.artist = dec(body).replace(/\0+$/, "").trim();
+        if (id === "TALB") out.album = dec(body).replace(/\0+$/, "").trim();
+        p += 10 + len;
+      }
+      return out;
+    }
+  }
+
+  window.RadioAudio = RadioAudio;
+  window.radioAudio = new RadioAudio();
+})();
+
+</script>
+<script>
+/* =========================================================================
+   radio.js — экран «в игре»: колесо/список станций, HUD, эквалайзер
+   Вся логика обёрнута в window.__startRadio(gameId, stIndex), чтобы экран
+   можно было инициализировать повторно (single-file демо, hash-роутинг).
+   ========================================================================= */
+(function () {
+  const CFG = window.RADIO_CONFIG;
+  const A = window.radioAudio;
+  const $ = (s) => document.querySelector(s);
+
+  let controller = null;   // AbortController для снятия слушателей при ре-ините
+
+  function startRadio(gameId, stIndex) {
+    if (controller) controller.abort();
+    controller = new AbortController();
+    const signal = controller.signal;
+    const on = (el, ev, fn, opt) => el.addEventListener(ev, fn, Object.assign({ signal }, opt));
+
+    const game = CFG.getGame(gameId || "v");
+    const stations = game.stations || [];
+
+    const ring = $("#ring"), rlist = $("#rlist");
+    const wheelStage = $("#wheelStage"), listStage = $("#listStage");
+    const hudIcon = $("#hudIcon"), hudName = $("#hudName"), hudTag = $("#hudTag");
+    const hudTrack = $("#hudTrack"), hudArtist = $("#hudArtist"), hudLive = $("#hudLive");
+    const nowStation = $("#nowStation"), nowTrack = $("#nowTrack");
+    const tCur = $("#tCur"), tDur = $("#tDur"), progFill = $("#progFill");
+    const toastEl = $("#toast");
+
+    let idx = Math.min(stations.length - 1, Math.max(0, parseInt(stIndex || 0, 10) || 0));
+    let playing = false;
+    let chipEls = [], itemEls = [], miniCanvases = [];
+    let demoTimer = null, demoTick = 0, progressTimer = null;
+
+    /* сброс DOM колеса/списка от прошлой инициализации */
+    ring.innerHTML = ""; rlist.innerHTML = "";
+    ring.style.removeProperty("--rot");
+
+    document.body.className = "theme-" + game.theme;
+    document.documentElement.style.setProperty("--accent", game.accent);
+    document.title = game.name + " — радио · GTA RADIO";
+    $("#gameTag").innerHTML = `<b>${game.num}</b> · ${game.city} · ${stations.length} волн`;
+
+    const goHome = () => { if (window.SINGLE && window.__showHome) window.__showHome(); };
+
+    /* ------------------------------- утилиты ------------------------------ */
+    function toast(msg, err) {
+      toastEl.textContent = msg;
+      toastEl.classList.toggle("err", !!err);
+      toastEl.classList.add("show");
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => toastEl.classList.remove("show"), err ? 5200 : 2600);
+    }
+    const fmt = (s) => {
+      if (!isFinite(s) || s < 0) s = 0;
+      const m = Math.floor(s / 60), r = Math.floor(s % 60);
+      return m + ":" + String(r).padStart(2, "0");
+    };
+    const ICON = {
+      play: '<path d="M8 5v14l11-7z"/>',
+      pause: '<path d="M7 5h3.5v14H7zm6.5 0H17v14h-3.5z"/>'
+    };
+
+    /* --------------------------- построение UI ---------------------------- */
+    if (game.ui === "wheel") {
+      wheelStage.classList.remove("hidden");
+      listStage.classList.add("hidden");
+      const step = 360 / stations.length;
+      stations.forEach((st, i) => {
+        const b = document.createElement("button");
+        b.className = "st-chip";
+        b.style.setProperty("--a", (i * step).toFixed(3) + "deg");
+        b.style.setProperty("--sc", st.accent);
+        b.dataset.i = i;
+        b.title = st.name + " — " + st.tagline;
+        b.innerHTML = `<span class="disc">${CFG.stationIcon(st, 96, 16)}</span><span class="lbl">${st.name}</span>`;
+        on(b, "click", () => select(i, true));
+        ring.appendChild(b);
+        chipEls.push(b);
+      });
+    } else {
+      wheelStage.classList.add("hidden");
+      listStage.classList.remove("hidden");
+      const num = document.getElementById("stageNum");
+      if (num) num.textContent = game.num;
+      stations.forEach((st, i) => {
+        const li = document.createElement("li");
+        li.dataset.i = i;
+        li.innerHTML = `<button type="button">
+            <span class="ico">${CFG.stationIcon(st, 30, 7)}</span>
+            <span><span class="nm">${st.name}</span><span class="tg">${st.tagline || ""}</span></span>
+            <canvas class="eqmini" width="52" height="32"></canvas>
+          </button>`;
+        on(li.querySelector("button"), "click", () => select(i, true));
+        rlist.appendChild(li);
+        itemEls.push(li);
+      });
+    }
+    miniCanvases = itemEls.map((li) => li.querySelector(".eqmini"));
+
+    /* ------------------------------ эквалайзер ---------------------------- */
+    const eqHub = $("#eqHub"), hubCtx = eqHub.getContext("2d");
+    const barsWrap = $("#eqbars");
+    if (!barsWrap.children.length) {
+      const NB = 22;
+      for (let i = 0; i < NB; i++) barsWrap.appendChild(document.createElement("i"));
+    }
+    const barEls = [...barsWrap.children];
+
+    function drawEq() {
+      if (signal.aborted) return;
+      const spec = A.spectrum();
+      if (spec) {
+        for (let i = 0; i < barEls.length; i++) {
+          const v = spec[Math.floor(Math.pow(i / barEls.length, 1.4) * 90) + 1] / 255;
+          barEls[i].style.height = Math.max(6, v * 100) + "%";
+        }
+      } else {
+        barEls.forEach((b, i) => (b.style.height = 8 + Math.abs(Math.sin(Date.now() / 400 + i)) * 12 + "%"));
+      }
+      if (game.ui === "wheel") {
+        const w = eqHub.width, h = eqHub.height, n = 26;
+        hubCtx.clearRect(0, 0, w, h);
+        const grad = hubCtx.createLinearGradient(0, h, 0, 0);
+        grad.addColorStop(0, game.accent);
+        grad.addColorStop(1, "#ffffff");
+        hubCtx.fillStyle = grad;
+        for (let i = 0; i < n; i++) {
+          const v = spec ? spec[Math.floor(Math.pow(i / n, 1.5) * 80) + 1] / 255 : (0.15 + Math.abs(Math.sin(Date.now() / 500 + i)) * 0.2);
+          const bh = Math.max(2, v * h * 0.92);
+          hubCtx.globalAlpha = 0.35 + v * 0.65;
+          hubCtx.fillRect(i * (w / n), h - bh, w / n - 2, bh);
+        }
+        hubCtx.globalAlpha = 1;
+      }
+      miniCanvases.forEach((c, i) => {
+        if (!c || i !== idx) return;
+        const cx = c.getContext("2d"), w = c.width, h = c.height, n = 7;
+        cx.clearRect(0, 0, w, h);
+        cx.fillStyle = stations[i].accent || game.accent;
+        for (let k = 0; k < n; k++) {
+          const v = spec ? spec[k * 5 + 2] / 255 : 0.3 + Math.abs(Math.sin(Date.now() / 300 + k)) * 0.4;
+          cx.fillRect(k * (w / n), h - Math.max(2, v * h), w / n - 2, Math.max(2, v * h));
+        }
+      });
+      requestAnimationFrame(drawEq);
+    }
+
+    /* --------------------------- демо-метаданные -------------------------- */
+    const DEMO_TITLES = {
+      house: ["Midnight Circuit", "Neon Overdrive", "Warehouse 88", "Sunset Boulevard"],
+      rock: ["Chrome Highway", "Blvd. of Noise", "Gasoline Heart", "Riot Avenue"],
+      metal: ["Iron Requiem", "Skull Doctrine", "Blackout Engine", "Grave Machine"],
+      hop: ["Low Slow", "Concrete Crown", "Block Party '04", "Candy Paint"],
+      funk: ["Velvet Groove", "Boogie Contract", "Silk & Steel", "Funky Diplomat"],
+      soul: ["Slow Burn", "Golden Hour", "Honey & Smoke", "Sunday Best"],
+      jazz: ["Blue Interlude", "Late Set", "Smoke Ring Suite", "After Hours"],
+      amb: ["Night Drive", "Static Bloom", "Empty Freeway", "Pale Horizon"],
+      reggae: ["Island Signal", "Riddim & Dust", "Coconut Grove", "One Drop"],
+      country: ["Dust County", "Pickup Anthem", "Whiskey Road", "Open Range"],
+      surf: ["Pipeline Dream", "Salt Air", "Wet Suit Boogie", "Point Break"],
+      talk: ["Эфир: разговорное шоу", "Рекламная пауза", "Звонок в студию", "Новости часа"],
+      world: ["Eastern Winds", "Volga Nights", "Bazaar Beat", "Steppe Radio"]
+    };
+    function startDemoMeta(station) {
+      stopDemoMeta();
+      const prog = (station.demo && station.demo.prog) || "rock";
+      const list = DEMO_TITLES[prog] || DEMO_TITLES.rock;
+      let k = Math.floor(Math.random() * list.length);
+      const set = () => {
+        hudTrack.textContent = list[k % list.length] + "  ·  демо-эфир";
+        hudArtist.textContent = prog === "talk" ? "" : "процедурный микс";
+        nowTrack.innerHTML = `<span class="sep">▶</span> ${list[k % list.length]} <span class="sep">—</span> сгенерировано браузером`;
+        k++;
+      };
+      set();
+      demoTimer = setInterval(set, 9000);
+    }
+    function stopDemoMeta() { if (demoTimer) clearInterval(demoTimer); demoTimer = null; }
+
+    /* ------------------------------- выбор -------------------------------- */
+    function select(i, startAudio) {
+      idx = (i + stations.length) % stations.length;
+      const st = stations[idx];
+      document.documentElement.style.setProperty("--accent", st.accent || game.accent);
+
+      if (game.ui === "wheel") {
+        const step = 360 / stations.length;
+        ring.style.setProperty("--rot", (-idx * step).toFixed(3) + "deg");
+        chipEls.forEach((c, k) => c.classList.toggle("active", k === idx));
+      } else {
+        itemEls.forEach((li, k) => li.classList.toggle("active", k === idx));
+        const active = itemEls[idx];
+        if (active && active.scrollIntoView) active.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+
+      hudIcon.innerHTML = CFG.stationIcon(st, 46, 11);
+      hudName.textContent = st.name;
+      hudTag.textContent = st.tagline || "";
+      nowStation.textContent = st.name;
+      hudLive.classList.add("hidden");
+
+      if (!window.SINGLE) {
+        const url = new URL(location.href);
+        url.searchParams.set("game", game.id);
+        url.searchParams.set("st", idx);
+        history.replaceState(null, "", url);
+      }
+
+      A.tuningFx();
+      stopDemoMeta();
+      if (startAudio) {
+        playing = true;
+        setIcons(true);
+        try {
+          A.playStation(st);
+          if (A.mode === "demo") startDemoMeta(st);
+        } catch (e) {
+          console.error(e);
+          toast("Не удалось запустить звук: " + e.message, true);
+        }
+      }
+    }
+
+    function setIcons(isPlaying) {
+      $("#playIcon").innerHTML = isPlaying ? ICON.pause : ICON.play;
+      $("#powerIcon").innerHTML = isPlaying ? ICON.pause : ICON.play;
+    }
+
+    function togglePlay() {
+      const el = A._el;
+      if (!playing) { select(idx, true); return; }
+      if (A.mode === "demo") {
+        const g = A.master;
+        if (g) {
+          const t = A.ctx.currentTime;
+          g.gain.cancelScheduledValues(t);
+          g.gain.setValueAtTime(g.gain.value, t);
+          g.gain.linearRampToValueAtTime(0.0001, t + 0.15);
+          A._paused = true;
+          playing = false; setIcons(false);
+        }
+      } else if (el) {
+        if (el.paused) { el.play(); playing = true; } else { el.pause(); playing = false; }
+        setIcons(playing);
+      }
+    }
+    function resumeFromPause() {
+      if (A._paused && A.master) {
+        const t = A.ctx.currentTime;
+        A.master.gain.cancelScheduledValues(t);
+        A.master.gain.linearRampToValueAtTime(A.muted ? 0 : A.volume * 0.85, t + 0.2);
+        A._paused = false;
+        playing = true; setIcons(true);
+        return true;
+      }
+      return false;
+    }
+
+    /* ------------------------------ события ------------------------------- */
+    A.setCallbacks({
+      onMeta: (m) => {
+        if (!m) return;
+        hudLive.classList.toggle("hidden", !m.live);
+        hudTrack.textContent = m.title || "";
+        hudArtist.textContent = m.artist ? "— " + m.artist : "";
+        nowTrack.innerHTML = `<span class="sep">▶</span> ${m.title || ""}${m.artist ? ` <span class="sep">—</span> ${m.artist}` : ""}`;
+      },
+      onError: (t, e) => {
+        const src = t && t.src ? t.src : "";
+        toast(`Не удалось загрузить: ${src || "поток"}. Проверь путь к файлу / CORS.`, true);
+        console.warn("audio error", src, e);
+      }
+    });
+
+    on($("#btnPlay"), "click", () => { if (!resumeFromPause()) togglePlay(); });
+    on($("#btnPower"), "click", () => { if (!resumeFromPause()) togglePlay(); });
+    on($("#btnNext"), "click", () => select(idx + 1, true));
+    on($("#btnPrev"), "click", () => select(idx - 1, true));
+    on($("#btnBack"), "click", () => { if (window.SINGLE) goHome(); else history.back(); });
+    on($("#btnHome"), "click", () => { if (window.SINGLE) goHome(); else location.href = "index.html"; });
+
+    const vol = $("#vol");
+    const paintVol = () => vol.style.setProperty("--p", vol.value + "%");
+    on(vol, "input", () => { A.setVolume(vol.value / 100); paintVol(); });
+    paintVol();
+
+    on($("#btnMute"), "click", () => {
+      A.setMuted(!A.muted);
+      $("#volIcon").innerHTML = A.muted
+        ? '<path d="M4 9v6h4l5 4V5L8 9zm15.5 3 2.5-2.5-1.4-1.4L18 10.6 15.4 8 14 9.4l2.6 2.6L14 14.6 15.4 16l2.6-2.6 2.6 2.6 1.4-1.4z"/>'
+        : '<path d="M4 9v6h4l5 4V5L8 9zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/>';
+    });
+
+    let wheelLock = 0;
+    on($("#wheel"), "wheel", (e) => {
+      e.preventDefault();
+      const now = Date.now();
+      if (now - wheelLock < 220) return;
+      wheelLock = now;
+      select(idx + (e.deltaY > 0 ? 1 : -1), playing);
+    }, { passive: false });
+
+    let tx = 0;
+    on(document, "touchstart", (e) => (tx = e.touches[0].clientX), { passive: true });
+    on(document, "touchend", (e) => {
+      const dx = e.changedTouches[0].clientX - tx;
+      if (Math.abs(dx) > 60) select(idx + (dx < 0 ? 1 : -1), playing);
+    }, { passive: true });
+
+    on(document, "keydown", (e) => {
+      if (e.target.matches("input,textarea,select")) return;
+      switch (e.key) {
+        case "ArrowRight": case "ArrowDown": e.preventDefault(); select(idx + 1, playing); break;
+        case "ArrowLeft": case "ArrowUp": e.preventDefault(); select(idx - 1, playing); break;
+        case " ": e.preventDefault(); if (!resumeFromPause()) togglePlay(); break;
+        case "m": case "M": case "ь": $("#btnMute").click(); break;
+        case "Escape": if (window.SINGLE) goHome(); else location.href = "index.html"; break;
+        default:
+          if (/^[1-9]$/.test(e.key)) { const n = parseInt(e.key, 10) - 1; if (n < stations.length) select(n, true); }
+      }
+    });
+
+    progressTimer = setInterval(() => {
+      const el = A._el;
+      if (el && A.mode === "audio" && el.duration && isFinite(el.duration)) {
+        tCur.textContent = fmt(el.currentTime);
+        tDur.textContent = fmt(el.duration);
+        progFill.style.width = (el.currentTime / el.duration) * 100 + "%";
+      } else if (A.mode === "demo") {
+        demoTick += 0.5;
+        tCur.textContent = fmt(demoTick);
+        tDur.textContent = "∞ live";
+        progFill.style.width = ((demoTick % 30) / 30) * 100 + "%";
+      } else {
+        tCur.textContent = "0:00"; tDur.textContent = "0:00"; progFill.style.width = "0%";
+      }
+    }, 500);
+
+    /* ------------------------------- старт -------------------------------- */
+    ring.style.transition = "none";
+    chipEls.forEach((c) => (c.style.transition = "none"));
+    select(idx, false);
+    void ring.offsetWidth;
+    requestAnimationFrame(() => {
+      ring.style.transition = "";
+      chipEls.forEach((c) => (c.style.transition = ""));
+    });
+    drawEq();
+
+    const start = () => {
+      document.removeEventListener("pointerdown", start);
+      document.removeEventListener("keydown", start);
+      if (!playing) { select(idx, true); toast("Эфир включён — «как в машине». Крути колесо."); }
+    };
+    on(document, "pointerdown", start);
+    on(document, "keydown", start);
+    // single-file: клик по карточке игры — уже жест пользователя, заводим эфир сразу
+    window.__radioKick = () => { if (!signal.aborted) start(); };
+    signal.addEventListener("abort", () => { window.__radioKick = null; });
+
+    const anyReal = stations.some((s) => CFG.stationMode(s) === "audio");
+    if (!anyReal) setTimeout(() => { if (!signal.aborted) toast("Демо-режим: музыка генерируется в браузере. Подключи mp3 в редакторе станций."); }, 1200);
+
+    /* остановка при выходе с экрана */
+    signal.addEventListener("abort", () => {
+      stopDemoMeta();
+      clearInterval(progressTimer);
+      A.stop();
+    });
+  }
+
+  window.__startRadio = startRadio;
+
+  /* мультистраничный режим: стартуем сразу из URL */
+  if (!window.SINGLE) {
+    const p = new URLSearchParams(location.search);
+    startRadio(p.get("game") || "v", parseInt(p.get("st") || "0", 10) || 0);
+  }
+})();
+
+</script>
+<script>
+
+(function () {
+  const CFG = window.RADIO_CONFIG;
+  const grid = document.getElementById('games');
+  document.getElementById('subtitle').textContent = CFG.meta.subtitle;
+  document.getElementById('disclaimer').textContent = CFG.meta.disclaimer;
+  document.getElementById('ver').textContent = CFG.meta.version;
+
+  CFG.games.forEach(g => {
+    const a = document.createElement('a');
+    a.className = 'game';
+    a.href = 'radio.html?game=' + g.id;
+    a.style.setProperty('--c', g.accent);
+    a.innerHTML = `
+      <span class="g-arrow">→</span>
+      <span class="num">${g.num}</span>
+      <span class="g-name">${g.name}</span>
+      <span class="g-meta">${g.year} · ${g.city}</span>
+      <span class="g-count">${g.stations.length} станций</span>`;
+    a.addEventListener('mouseenter', () => document.body.style.setProperty('--accent', g.accent));
+    a.addEventListener('focus', () => document.body.style.setProperty('--accent', g.accent));
+    grid.appendChild(a);
+  });
+})();
+
+</script>
+<script>
+
+/* ---------- single-file роутер: главная <-> экран радио ---------- */
+(function () {
+  const home = document.getElementById('screenHome');
+  const rad  = document.getElementById('screenRadio');
+  function showHome() {
+    rad.hidden = true; home.hidden = false;
+    document.body.className = '';
+    document.documentElement.style.setProperty('--accent', '#7fd4ff');
+    document.title = 'GTA RADIO — фанатское радио из игр серии';
+    window.radioAudio.stop();
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  }
+  function showRadio(g, st) {
+    home.hidden = true; rad.hidden = false;
+    window.__startRadio(g, st || 0);
+    if (window.__radioKick) window.__radioKick();
+  }
+  window.__showHome = showHome;
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a.game');
+    if (!a) return;
+    e.preventDefault();
+    const m = (a.getAttribute('href') || '').match(/game=([a-z0-9]+)/);
+    showRadio(m ? m[1] : 'v', 0);
+    history.replaceState(null, '', '#game=' + (m ? m[1] : 'v'));
+  });
+  window.addEventListener('hashchange', () => {
+    const m = location.hash.match(/game=([a-z0-9]+)(?:&st=(\d+))?/);
+    if (m) showRadio(m[1], +(m[2] || 0));
+    else if (!rad.hidden) showHome();
+  });
+  const m0 = location.hash.match(/game=([a-z0-9]+)(?:&st=(\d+))?/);
+  if (m0) { showRadio(m0[1], +(m0[2] || 0)); history.replaceState(null, '', '#game=' + m0[1]); }
+})();
+
+</script>
+</body>
+</html>
