@@ -6,3 +6,5 @@ _shots/
 token.txt
 .secrets*
 .github/
+__pycache__/
+*.pyc
