@@ -1,7 +1,13 @@
 /* Сгенерировано tools/add-art.mjs — не править руками. */
 window.RADIO_ART = {
   "home": "",
-  "games": {},
+  "games": {
+    "v": "assets/bg/v.jpg",
+    "iv": "assets/bg/iv.jpg",
+    "sa": "assets/bg/sa.jpg",
+    "vc": "assets/bg/vc.jpg",
+    "iii": "assets/bg/iii.jpg"
+  },
   "logos": {},
   "gameLogos": {
     "v": "assets/games/v.png",
