@@ -448,6 +448,8 @@ body.theme-iii .list-stage{justify-content:flex-start}
    ПОДЛОЖКИ (assets/bg/…) и логотипы станций (assets/logos/…)
    ========================================================================= */
 .bgimg{position:fixed;inset:0;z-index:-3;background-size:cover;background-position:center;transform:scale(1.02)}
+body.has-bg .bg::after{display:none}          /* постер есть — «торпедо» не режет картинку */
+body.has-bg .stage-num{display:none}          /* постер есть — водяной знак номера не нужен */
 body.has-bg .bg::before{
   background:
     radial-gradient(120% 80% at 50% -10%, rgba(255,255,255,.05), transparent 60%),
