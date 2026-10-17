@@ -54,7 +54,8 @@
     setBG((ART().games || {})[game.id]);
     document.documentElement.style.setProperty("--accent", game.accent);
     document.title = game.name + " — радио · GTA RADIO";
-    $("#gameTag").innerHTML = `<b>${game.num}</b> · ${game.city} · ${stations.length} волн`;
+    const gLogo = (ART().gameLogos || {})[game.id];
+    $("#gameTag").innerHTML = `${gLogo ? `<img class="g-logo-sm" src="${gLogo}" alt=""> ` : `<b>${game.num}</b>`} · ${game.city} · ${stations.length} волн`;
 
     const goHome = () => { if (window.SINGLE && window.__showHome) window.__showHome(); };
 

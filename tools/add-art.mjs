@@ -23,8 +23,12 @@ const pick = (dir, base) => {
   return hit ? path.posix.join(...path.relative(ROOT, dir).split(path.sep), hit) : null;
 };
 
-const art = { home: "", games: {}, logos: {} };
+const art = { home: "", games: {}, logos: {}, gameLogos: {} };
 art.home = pick(path.join(ROOT, "assets", "bg"), "home") || "";
+for (const g of CFG.games) {
+  const gl = pick(path.join(ROOT, "assets", "games"), g.id);
+  if (gl) art.gameLogos[g.id] = gl;
+}
 for (const g of CFG.games) {
   const bg = pick(path.join(ROOT, "assets", "bg"), g.id);
   if (bg) art.games[g.id] = bg;
@@ -40,4 +44,5 @@ fs.writeFileSync(path.join(ROOT, "js", "art.auto.js"),
 
 console.log("подложка главной:", art.home || "— нет файла assets/bg/home.*");
 console.log("подложки игр:    ", Object.keys(art.games).length ? JSON.stringify(art.games) : "— нет файлов assets/bg/<игра>.*");
+console.log("логотипы игр:    ", Object.keys(art.gameLogos).join(", ") || "— нет файлов assets/games/<игра>.*");
 console.log("логотипов:       ", Object.keys(art.logos).length ? Object.keys(art.logos).join(", ") : "— нет файлов assets/logos/…");

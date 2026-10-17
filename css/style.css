@@ -129,6 +129,10 @@ img,svg{display:block}
 .game:hover,.game:focus-visible{transform:translateY(-6px);border-color:color-mix(in srgb, var(--c) 55%, transparent);box-shadow:0 26px 50px -22px rgba(0,0,0,.95), 0 0 0 1px color-mix(in srgb, var(--c) 22%, transparent), 0 0 42px -12px color-mix(in srgb, var(--c) 55%, transparent)}
 .game:hover::before,.game:focus-visible::before{opacity:1}
 .game>*{position:relative}
+.game .g-logo{height:64px;width:auto;max-width:100%;object-fit:contain;
+  filter:drop-shadow(0 8px 22px rgba(0,0,0,.65));transition:transform .28s}
+.game:hover .g-logo{transform:scale(1.06)}
+.topbar .g-logo-sm{height:26px;width:auto;object-fit:contain;filter:drop-shadow(0 3px 10px rgba(0,0,0,.7))}
 .game .num{
   font-family:var(--f-title);font-size:clamp(2.6rem,5.4vw,3.6rem);line-height:.9;color:var(--c);
   text-shadow:0 0 26px color-mix(in srgb, var(--c) 45%, transparent)

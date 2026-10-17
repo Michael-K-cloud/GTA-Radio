@@ -42,7 +42,7 @@
 <script>
 (function () {
   const CFG = window.RADIO_CONFIG;
-  const ART = window.RADIO_ART || {};
+  const ART = window.RADIO_ART || { gameLogos: {} };
   if (ART.home) {
     const d = document.createElement('div');
     d.className = 'bgimg';
@@ -60,9 +60,10 @@
     a.className = 'game';
     a.href = 'radio.html?game=' + g.id;
     a.style.setProperty('--c', g.accent);
+    const gl = (ART.gameLogos || {})[g.id];
     a.innerHTML = `
       <span class="g-arrow">→</span>
-      <span class="num">${g.num}</span>
+      ${gl ? `<img class="g-logo" src="${gl}" alt="${g.name}">` : `<span class="num">${g.num}</span>`}
       <span class="g-name">${g.name}</span>
       <span class="g-meta">${g.year} · ${g.city}</span>
       <span class="g-count">${g.stations.length} станций</span>`;

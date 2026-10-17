@@ -136,6 +136,10 @@ img,svg{display:block}
 .game:hover,.game:focus-visible{transform:translateY(-6px);border-color:color-mix(in srgb, var(--c) 55%, transparent);box-shadow:0 26px 50px -22px rgba(0,0,0,.95), 0 0 0 1px color-mix(in srgb, var(--c) 22%, transparent), 0 0 42px -12px color-mix(in srgb, var(--c) 55%, transparent)}
 .game:hover::before,.game:focus-visible::before{opacity:1}
 .game>*{position:relative}
+.game .g-logo{height:64px;width:auto;max-width:100%;object-fit:contain;
+  filter:drop-shadow(0 8px 22px rgba(0,0,0,.65));transition:transform .28s}
+.game:hover .g-logo{transform:scale(1.06)}
+.topbar .g-logo-sm{height:26px;width:auto;object-fit:contain;filter:drop-shadow(0 3px 10px rgba(0,0,0,.7))}
 .game .num{
   font-family:var(--f-title);font-size:clamp(2.6rem,5.4vw,3.6rem);line-height:.9;color:var(--c);
   text-shadow:0 0 26px color-mix(in srgb, var(--c) 45%, transparent)
@@ -592,7 +596,14 @@ img.art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 window.RADIO_ART = {
   "home": "",
   "games": {},
-  "logos": {}
+  "logos": {},
+  "gameLogos": {
+    "v": "assets/games/v.png",
+    "iv": "assets/games/iv.png",
+    "sa": "assets/games/sa.png",
+    "vc": "assets/games/vc.png",
+    "iii": "assets/games/iii.png"
+  }
 };
 
 </script>
@@ -1457,7 +1468,8 @@ window.RADIO_CONFIG = {
     setBG((ART().games || {})[game.id]);
     document.documentElement.style.setProperty("--accent", game.accent);
     document.title = game.name + " — радио · GTA RADIO";
-    $("#gameTag").innerHTML = `<b>${game.num}</b> · ${game.city} · ${stations.length} волн`;
+    const gLogo = (ART().gameLogos || {})[game.id];
+    $("#gameTag").innerHTML = `${gLogo ? `<img class="g-logo-sm" src="${gLogo}" alt=""> ` : `<b>${game.num}</b>`} · ${game.city} · ${stations.length} волн`;
 
     const goHome = () => { if (window.SINGLE && window.__showHome) window.__showHome(); };
 
@@ -1802,7 +1814,7 @@ window.RADIO_CONFIG = {
 
 (function () {
   const CFG = window.RADIO_CONFIG;
-  const ART = window.RADIO_ART || {};
+  const ART = window.RADIO_ART || { gameLogos: {} };
   if (ART.home) {
     const d = document.createElement('div');
     d.className = 'bgimg';
@@ -1820,9 +1832,10 @@ window.RADIO_CONFIG = {
     a.className = 'game';
     a.href = 'radio.html?game=' + g.id;
     a.style.setProperty('--c', g.accent);
+    const gl = (ART.gameLogos || {})[g.id];
     a.innerHTML = `
       <span class="g-arrow">→</span>
-      <span class="num">${g.num}</span>
+      ${gl ? `<img class="g-logo" src="${gl}" alt="${g.name}">` : `<span class="num">${g.num}</span>`}
       <span class="g-name">${g.name}</span>
       <span class="g-meta">${g.year} · ${g.city}</span>
       <span class="g-count">${g.stations.length} станций</span>`;
