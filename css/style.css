@@ -439,3 +439,15 @@ body.theme-iii .list-stage{justify-content:flex-start}
   .toast{bottom:170px}
   .list-stage{justify-content:center!important}
 }
+
+/* =========================================================================
+   ПОДЛОЖКИ (assets/bg/…) и логотипы станций (assets/logos/…)
+   ========================================================================= */
+.bgimg{position:fixed;inset:0;z-index:-3;background-size:cover;background-position:center;transform:scale(1.02)}
+body.has-bg .bg::before{
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(255,255,255,.05), transparent 60%),
+    linear-gradient(180deg, rgba(4,6,10,.60), rgba(6,9,14,.78) 45%, rgba(3,5,8,.93));
+}
+.st-chip .disc,.rlist .ico,.hud .ico{position:relative}
+img.art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}

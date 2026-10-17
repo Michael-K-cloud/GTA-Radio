@@ -37,10 +37,19 @@
     </footer>
   </div>
 
+<script src="js/art.auto.js"></script>
 <script src="js/config.js"></script>
 <script>
 (function () {
   const CFG = window.RADIO_CONFIG;
+  const ART = window.RADIO_ART || {};
+  if (ART.home) {
+    const d = document.createElement('div');
+    d.className = 'bgimg';
+    d.style.backgroundImage = `url("${ART.home}")`;
+    document.body.prepend(d);
+    document.body.classList.add('has-bg');
+  }
   const grid = document.getElementById('games');
   document.getElementById('subtitle').textContent = CFG.meta.subtitle;
   document.getElementById('disclaimer').textContent = CFG.meta.disclaimer;

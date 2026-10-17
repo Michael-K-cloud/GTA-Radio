@@ -25,6 +25,7 @@ home_script = between(index_html, "<script>\n(function () {", "</script>")
 home_script = home_script.replace("<script>", "", 1).replace("</script>", "", 1)
 radio_body = between(radio_html, '<div class="stage">', '<div class="toast" id="toast"></div>')
 
+art   = rd("js/art.auto.js") if os.path.exists(os.path.join(ROOT, "js", "art.auto.js")) else "window.RADIO_ART={home:'',games:{},logos:{}};"
 cfg   = rd("js/config.js")
 audio = rd("js/audio.js")
 radio = rd("js/radio.js")
@@ -93,6 +94,9 @@ demo = f"""<!DOCTYPE html>
   </div>
 
 <script>window.SINGLE = true;</script>
+<script>
+{art}
+</script>
 <script>
 {cfg}
 </script>

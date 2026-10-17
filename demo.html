@@ -447,6 +447,18 @@ body.theme-iii .list-stage{justify-content:flex-start}
   .list-stage{justify-content:center!important}
 }
 
+/* =========================================================================
+   ПОДЛОЖКИ (assets/bg/…) и логотипы станций (assets/logos/…)
+   ========================================================================= */
+.bgimg{position:fixed;inset:0;z-index:-3;background-size:cover;background-position:center;transform:scale(1.02)}
+body.has-bg .bg::before{
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(255,255,255,.05), transparent 60%),
+    linear-gradient(180deg, rgba(4,6,10,.60), rgba(6,9,14,.78) 45%, rgba(3,5,8,.93));
+}
+.st-chip .disc,.rlist .ico,.hud .ico{position:relative}
+img.art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
 </style>
 </head>
 <body>
@@ -575,6 +587,15 @@ body.theme-iii .list-stage{justify-content:flex-start}
   </div>
 
 <script>window.SINGLE = true;</script>
+<script>
+/* Сгенерировано tools/add-art.mjs — не править руками. */
+window.RADIO_ART = {
+  "home": "",
+  "games": {},
+  "logos": {}
+};
+
+</script>
 <script>
 /* =========================================================================
    GTA RADIO — единый конфиг сайта
@@ -1389,6 +1410,20 @@ window.RADIO_CONFIG = {
   const CFG = window.RADIO_CONFIG;
   const A = window.radioAudio;
   const $ = (s) => document.querySelector(s);
+  const ART = () => window.RADIO_ART || { home: "", games: {}, logos: {} };
+  const artImg = (gid, st) => {
+    const a = (ART().logos || {})[gid + "/" + st.id];
+    return a ? `<img class="art" src="${a}" alt="" onerror="this.remove()">` : "";
+  };
+  function setBG(src) {
+    document.querySelectorAll(".bgimg").forEach((e) => e.remove());
+    document.body.classList.toggle("has-bg", !!src);
+    if (!src) return;
+    const d = document.createElement("div");
+    d.className = "bgimg";
+    d.style.backgroundImage = `url("${src}")`;
+    document.body.prepend(d);
+  }
 
   let controller = null;   // AbortController для снятия слушателей при ре-ините
 
@@ -1419,6 +1454,7 @@ window.RADIO_CONFIG = {
     ring.style.removeProperty("--rot");
 
     document.body.className = "theme-" + game.theme;
+    setBG((ART().games || {})[game.id]);
     document.documentElement.style.setProperty("--accent", game.accent);
     document.title = game.name + " — радио · GTA RADIO";
     $("#gameTag").innerHTML = `<b>${game.num}</b> · ${game.city} · ${stations.length} волн`;
@@ -1455,7 +1491,7 @@ window.RADIO_CONFIG = {
         b.style.setProperty("--sc", st.accent);
         b.dataset.i = i;
         b.title = st.name + " — " + st.tagline;
-        b.innerHTML = `<span class="disc">${CFG.stationIcon(st, 96, 16)}</span><span class="lbl">${st.name}</span>`;
+        b.innerHTML = `<span class="disc">${CFG.stationIcon(st, 96, 16)}${artImg(game.id, st)}</span><span class="lbl">${st.name}</span>`;
         on(b, "click", () => select(i, true));
         ring.appendChild(b);
         chipEls.push(b);
@@ -1469,7 +1505,7 @@ window.RADIO_CONFIG = {
         const li = document.createElement("li");
         li.dataset.i = i;
         li.innerHTML = `<button type="button">
-            <span class="ico">${CFG.stationIcon(st, 30, 7)}</span>
+            <span class="ico">${CFG.stationIcon(st, 30, 7)}${artImg(game.id, st)}</span>
             <span><span class="nm">${st.name}</span><span class="tg">${st.tagline || ""}</span></span>
             <canvas class="eqmini" width="52" height="32"></canvas>
           </button>`;
@@ -1576,7 +1612,7 @@ window.RADIO_CONFIG = {
         if (active && active.scrollIntoView) active.scrollIntoView({ block: "nearest", behavior: "smooth" });
       }
 
-      hudIcon.innerHTML = CFG.stationIcon(st, 46, 11);
+      hudIcon.innerHTML = CFG.stationIcon(st, 46, 11) + artImg(game.id, st);
       hudName.textContent = st.name;
       hudTag.textContent = st.tagline || "";
       nowStation.textContent = st.name;
@@ -1766,6 +1802,14 @@ window.RADIO_CONFIG = {
 
 (function () {
   const CFG = window.RADIO_CONFIG;
+  const ART = window.RADIO_ART || {};
+  if (ART.home) {
+    const d = document.createElement('div');
+    d.className = 'bgimg';
+    d.style.backgroundImage = `url("${ART.home}")`;
+    document.body.prepend(d);
+    document.body.classList.add('has-bg');
+  }
   const grid = document.getElementById('games');
   document.getElementById('subtitle').textContent = CFG.meta.subtitle;
   document.getElementById('disclaimer').textContent = CFG.meta.disclaimer;

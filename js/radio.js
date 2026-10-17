@@ -7,6 +7,20 @@
   const CFG = window.RADIO_CONFIG;
   const A = window.radioAudio;
   const $ = (s) => document.querySelector(s);
+  const ART = () => window.RADIO_ART || { home: "", games: {}, logos: {} };
+  const artImg = (gid, st) => {
+    const a = (ART().logos || {})[gid + "/" + st.id];
+    return a ? `<img class="art" src="${a}" alt="" onerror="this.remove()">` : "";
+  };
+  function setBG(src) {
+    document.querySelectorAll(".bgimg").forEach((e) => e.remove());
+    document.body.classList.toggle("has-bg", !!src);
+    if (!src) return;
+    const d = document.createElement("div");
+    d.className = "bgimg";
+    d.style.backgroundImage = `url("${src}")`;
+    document.body.prepend(d);
+  }
 
   let controller = null;   // AbortController для снятия слушателей при ре-ините
 
@@ -37,6 +51,7 @@
     ring.style.removeProperty("--rot");
 
     document.body.className = "theme-" + game.theme;
+    setBG((ART().games || {})[game.id]);
     document.documentElement.style.setProperty("--accent", game.accent);
     document.title = game.name + " — радио · GTA RADIO";
     $("#gameTag").innerHTML = `<b>${game.num}</b> · ${game.city} · ${stations.length} волн`;
@@ -73,7 +88,7 @@
         b.style.setProperty("--sc", st.accent);
         b.dataset.i = i;
         b.title = st.name + " — " + st.tagline;
-        b.innerHTML = `<span class="disc">${CFG.stationIcon(st, 96, 16)}</span><span class="lbl">${st.name}</span>`;
+        b.innerHTML = `<span class="disc">${CFG.stationIcon(st, 96, 16)}${artImg(game.id, st)}</span><span class="lbl">${st.name}</span>`;
         on(b, "click", () => select(i, true));
         ring.appendChild(b);
         chipEls.push(b);
@@ -87,7 +102,7 @@
         const li = document.createElement("li");
         li.dataset.i = i;
         li.innerHTML = `<button type="button">
-            <span class="ico">${CFG.stationIcon(st, 30, 7)}</span>
+            <span class="ico">${CFG.stationIcon(st, 30, 7)}${artImg(game.id, st)}</span>
             <span><span class="nm">${st.name}</span><span class="tg">${st.tagline || ""}</span></span>
             <canvas class="eqmini" width="52" height="32"></canvas>
           </button>`;
@@ -194,7 +209,7 @@
         if (active && active.scrollIntoView) active.scrollIntoView({ block: "nearest", behavior: "smooth" });
       }
 
-      hudIcon.innerHTML = CFG.stationIcon(st, 46, 11);
+      hudIcon.innerHTML = CFG.stationIcon(st, 46, 11) + artImg(game.id, st);
       hudName.textContent = st.name;
       hudTag.textContent = st.tagline || "";
       nowStation.textContent = st.name;
