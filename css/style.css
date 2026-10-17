@@ -13,7 +13,7 @@
   --accent:#7fd4ff;
   --panel:rgba(10,14,20,.72);
   --panel-brd:rgba(255,255,255,.10);
-  --wheel-size:min(66vmin,520px);
+  --wheel-size:min(80vmin,660px);
   --radius:16px;
   --f-title:"Archivo Black","Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --f-ui:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -200,16 +200,16 @@ img,svg{display:block}
 @keyframes spin{to{transform:rotate(360deg)}}
 .ring{position:absolute;inset:0;transform:rotate(var(--rot,0deg));transition:transform .62s cubic-bezier(.19,.9,.22,1)}
 .st-chip{
-  position:absolute;top:50%;left:50%;width:calc(var(--wheel-size)*.20);height:calc(var(--wheel-size)*.20);
-  margin:calc(var(--wheel-size)*-.10) 0 0 calc(var(--wheel-size)*-.10);
+  position:absolute;top:50%;left:50%;width:calc(var(--wheel-size)*.17);height:calc(var(--wheel-size)*.17);
+  margin:calc(var(--wheel-size)*-.085) 0 0 calc(var(--wheel-size)*-.085);
   /* позиция на круге фиксирована (кольцо поворачивает всё само),
      а контр-поворот держит иконки и подписи вертикальными */
-  transform:rotate(calc(var(--a) - 90deg)) translate(calc(var(--wheel-size)*.355)) rotate(calc(var(--a)*-1 + 90deg - var(--rot,0deg)));
+  transform:rotate(calc(var(--a) - 90deg)) translate(calc(var(--wheel-size)*.40)) rotate(calc(var(--a)*-1 + 90deg - var(--rot,0deg)));
   transition:transform .62s cubic-bezier(.19,.9,.22,1), filter .25s, opacity .35s;
   display:grid;place-items:center;padding:0;
 }
 .st-chip .disc{
-  width:100%;height:100%;border-radius:22%;overflow:hidden;position:relative;
+  width:100%;height:100%;border-radius:50%;overflow:hidden;position:relative;
   border:1px solid rgba(255,255,255,.13);
   box-shadow:0 14px 30px rgba(0,0,0,.65);
   transition:transform .25s cubic-bezier(.2,.9,.2,1), box-shadow .25s, border-color .25s;
@@ -227,7 +227,7 @@ img,svg{display:block}
 .st-chip:hover .disc{transform:scale(1.1);border-color:rgba(255,255,255,.35)}
 .st-chip:hover .lbl{color:#e7edf5;opacity:1}
 .st-chip.active .disc{
-  transform:scale(1.22);border-color:color-mix(in srgb,var(--sc) 70%,#fff);
+  transform:scale(1.10);border-color:color-mix(in srgb,var(--sc) 70%,#fff);
   box-shadow:0 0 0 2px color-mix(in srgb,var(--sc) 55%,transparent), 0 0 46px -6px color-mix(in srgb,var(--sc) 85%,transparent), 0 18px 34px rgba(0,0,0,.7);
 }
 .st-chip.active .lbl{color:#fff;font-weight:700;opacity:1}
@@ -456,4 +456,4 @@ body.has-bg .bg::before{
     linear-gradient(180deg, rgba(4,6,10,.60), rgba(6,9,14,.78) 45%, rgba(3,5,8,.93));
 }
 .st-chip .disc,.rlist .ico,.hud .ico{position:relative}
-img.art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+img.art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit}

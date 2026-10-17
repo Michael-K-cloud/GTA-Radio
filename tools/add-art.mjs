@@ -16,15 +16,19 @@ const ctx = { window: {} };
 vm.runInNewContext(fs.readFileSync(path.join(ROOT, "js", "config.js"), "utf8"), ctx);
 const CFG = ctx.window.RADIO_CONFIG;
 
-const pick = (dir, base) => {
+const pick = (dir, bases) => {
   if (!fs.existsSync(dir)) return null;
-  const hit = fs.readdirSync(dir).filter((f) => f.startsWith(base + ".") && EXT.test(f))
-    .sort((a, b) => a.localeCompare(b))[0];
-  return hit ? path.posix.join(...path.relative(ROOT, dir).split(path.sep), hit) : null;
+  const list = fs.readdirSync(dir);
+  for (const base of Array.isArray(bases) ? bases : [bases]) {
+    const hit = list.filter((f) => f === base || (f.startsWith(base + ".") && EXT.test(f)))
+      .sort((a, b) => a.localeCompare(b))[0];
+    if (hit) return path.posix.join(...path.relative(ROOT, dir).split(path.sep), hit);
+  }
+  return null;
 };
 
 const art = { home: "", games: {}, logos: {}, gameLogos: {} };
-art.home = pick(path.join(ROOT, "assets", "bg"), "home") || "";
+art.home = pick(path.join(ROOT, "assets", "bg"), ["home", "main"]) || "";
 for (const g of CFG.games) {
   const gl = pick(path.join(ROOT, "assets", "games"), g.id);
   if (gl) art.gameLogos[g.id] = gl;

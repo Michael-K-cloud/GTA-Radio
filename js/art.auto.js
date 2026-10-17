@@ -1,6 +1,6 @@
 /* Сгенерировано tools/add-art.mjs — не править руками. */
 window.RADIO_ART = {
-  "home": "",
+  "home": "assets/bg/main.jpg",
   "games": {
     "v": "assets/bg/v.jpg",
     "iv": "assets/bg/iv.jpg",
