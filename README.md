@@ -110,6 +110,12 @@ tools/check.mjs       автотест интерфейса (playwright, не ч
 `accent: "#цвет"` — и (по желанию) блок `body.theme-<имя>` в `css/style.css`
 с собственным фоном. Всё остальное подхватится автоматически.
 
+## Icecast «как у них» (живые 24/7-потоки)
+
+Готовый рецепт и конфиги: `docs/icecast/README.md`, `icecast.xml.sample`, `radio.liq.sample`
+(VPS + icecast2 + liquidsoap + nginx/HTTPS + CORS). В конфиге сайта станция тогда:
+`tracks: [{ type: "stream", src: "https://audio.твой-домен/v/rock" }]` → бейдж LIVE.
+
 ## Правовая заметка (важно!)
 
 Это **неофициальный фанатский прототип**: он не содержит ни кода, ни музыки, ни логотипов

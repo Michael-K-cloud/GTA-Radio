@@ -135,6 +135,7 @@
         </div>
       </div>
       <div class="grid2">
+        <div><label>Логотип (png/url, необязательно)</label><input type="text" id="mLogo" value="${s.logo || ""}" placeholder="assets/logos/sa/bounce.png"></div>
         <div><label>Подпись (жанр)</label><input type="text" id="mTag" value="${s.tagline || ""}"></div>
         <div><label>Иконка (мотив)</label><select id="mMotif">${motifs}</select></div>
         <div><label>Цвет акцента</label><input type="text" id="mAccent" value="${s.accent || "#7fd4ff"}"></div>
@@ -160,6 +161,7 @@
         if (!src) return null;
         return { type, src, title: title || undefined };
       }).filter(Boolean);
+      const logo = m.querySelector("#mLogo").value.trim();
       const obj = {
         id: (s.id || (s.name || "st").toLowerCase().replace(/[^a-z0-9]+/g, "-")).toString(),
         name: m.querySelector("#mName").value.trim() || "Без названия",
@@ -167,6 +169,7 @@
         accent: m.querySelector("#mAccent").value.trim(),
         bg: m.querySelector("#mBg").value.trim(),
         motif: m.querySelector("#mMotif").value,
+        ...(logo ? { logo } : {}),
         demo: {
           key: m.querySelector("#mKey").value.trim() || "C",
           bpm: parseInt(m.querySelector("#mBpm").value, 10) || 100,
@@ -219,6 +222,7 @@
           `id: ${q(s.id)}`, `name: ${q(s.name)}`, `tagline: ${q(s.tagline || "")}`,
           `accent: ${q(s.accent)}`, `bg: ${q(s.bg)}`, `motif: ${q(s.motif)}`
         ];
+        if (s.logo) parts.push(`logo: ${q(s.logo)}`);
         if (s.tracks && s.tracks.length) {
           parts.push("tracks: [" + s.tracks.map((t) =>
             "{" + ["type", "src", "title", "artist"].filter((k) => t[k] != null).map((k) => `${k}: ${q(t[k])}`).join(", ") + "}").join(", ") + "]");

@@ -158,7 +158,15 @@
       out.connect(tone);
       out.connect(rev);
 
-      const eng = { bus, noise, out, timer: null, t0: ctx.currentTime + 0.08, next: ctx.currentTime + 0.08, step: 0, station };
+      // синхронизация «одно радио на всех»: музыкальная фаза привязана к epoch-времени,
+      // поэтому у всех посетителей одна и та же доля такта в одну и ту же секунду
+      const stepDur = beat / 2;
+      const cycleSec = 16 * beat;                       // 4 такта цикла
+      const wall = Date.now() / 1000;
+      const phase = ((wall % cycleSec) + cycleSec) % cycleSec;
+      const firstStep = Math.ceil(phase / stepDur);
+      const eng = { bus, noise, out, timer: null, wall0: wall, step: firstStep, station, probe: null,
+                    t0: ctx.currentTime - phase };      // t0 — для внешних проверок фазы
 
       const kick = (t) => {
         const o = ctx.createOscillator(), g = ctx.createGain();
@@ -222,8 +230,7 @@
       };
 
       const hit = (arr, v) => !!arr && arr.indexOf(v) !== -1;
-      const scheduleStep = (step) => {
-        const t = eng.next;
+      const scheduleStep = (step, t) => {
         // step = номер восьмой; доля в такте = step/2 (целые и .5 — без float-дрейфа)
         const pos = step % (loopLen * 2);              // 0..31
         const bar = Math.round(pos / 2 * 100) / 100;   // 0..15.5
@@ -242,12 +249,19 @@
         if (hit(drums.hat, inBar)) hat(t, inBar === 1.5 || inBar === 3.5);
       };
 
+      // планировщик привязан к wall-clock: даже если аудиочасы браузера плывут
+      // (headless, спящий ноут), музыкальная фаза остаётся синхронной с epoch
       const pump = () => {
-        const ahead = 0.25;
-        while (eng.next < ctx.currentTime + ahead) {
-          scheduleStep(eng.step);
+        const ahead = 0.3;
+        for (;;) {
+          const tWall = eng.wall0 + (eng.step * stepDur - phase);   // когда шаг должен звучать по часам Земли
+          const wallNow = Date.now() / 1000;
+          if (tWall > wallNow + ahead) break;
+          let tCtx = ctx.currentTime + (tWall - wallNow);
+          if (tCtx < ctx.currentTime + 0.015) tCtx = ctx.currentTime + 0.015;
+          eng.probe = { k: eng.step, tWall };
+          scheduleStep(eng.step, tCtx);
           eng.step++;
-          eng.next = eng.t0 + eng.step * (beat / 2);   // шаг = восьмая, без дрейфа
         }
         eng.timer = setTimeout(pump, 60);
       };
@@ -315,7 +329,10 @@
       el.crossOrigin = "anonymous";
       el.preload = "auto";
       el.volume = this.volume;
-      el.addEventListener("ended", () => this.next());
+      el.addEventListener("ended", () => {
+        if (this._synced) { const st = this.station, tr = this._playlist; if (st && tr) this.playSynced(st, tr); }
+        else this.next();
+      });
       el.addEventListener("error", () => {
         const t = this._playlist[this._index];
         if (this._onError) this._onError(t, el.error);
@@ -366,12 +383,95 @@
     playStation(station) {
       const mode = window.RADIO_CONFIG.stationMode(station);
       if (mode === "demo") return this.startDemo(station);
-      return this.playTracks(station, window.RADIO_CONFIG.tracksOf(station));
+      const tracks = window.RADIO_CONFIG.tracksOf(station);
+      const sync = window.RADIO_CONFIG.meta.sync !== false && station.sync !== false;
+      if (sync && tracks.length && tracks.every((t) => t.type === "file")) {
+        return this.playSynced(station, tracks);
+      }
+      return this.playTracks(station, tracks);
+    }
+
+    /* ---- «одно радио на всех» без сервера: позиция = epoch % сумма длительностей ---- */
+    async _probeDurations(tracks) {
+      await Promise.all(tracks.map((t) => new Promise((res) => {
+        if (t._dur) return res();
+        const el = new Audio();
+        el.preload = "metadata";
+        const done = () => { t._dur = isFinite(el.duration) && el.duration > 0 ? el.duration : 0; res(); };
+        el.addEventListener("loadedmetadata", done, { once: true });
+        el.addEventListener("error", () => { t._dur = 0; res(); }, { once: true });
+        setTimeout(() => { if (!t._dur) { t._dur = 0; res(); } }, 6000);
+        el.src = RadioAudio.resolvePath(t.src);
+      })));
+      return tracks.filter((t) => t._dur > 0);
+    }
+
+    _syncPoint(tracks) {
+      const total = tracks.reduce((a, t) => a + t._dur, 0);
+      if (!total) return null;
+      let pos = ((Date.now() / 1000) % total + total) % total;
+      for (let i = 0; i < tracks.length; i++) {
+        if (pos < tracks[i]._dur) return { i, off: pos, total };
+        pos -= tracks[i]._dur;
+      }
+      return { i: 0, off: 0, total };
+    }
+
+    async playSynced(station, tracks) {
+      this.stopEngine();
+      clearInterval(this._syncTimer);
+      const usable = await this._probeDurations(tracks);
+      if (usable.length < tracks.length || !usable.length) return this.playTracks(station, tracks);
+      this.ensure();
+      this.mode = "audio";
+      this.station = station;
+      this._playlist = tracks;
+      this._synced = true;
+      this._attach();
+      const load = () => {
+        const pt = this._syncPoint(tracks);
+        if (!pt) return;
+        this._index = pt.i;
+        const t = tracks[pt.i];
+        const el = this._el;
+        const url = RadioAudio.resolvePath(t.src);
+        const seekPlay = () => { try { el.currentTime = pt.off; } catch (_) {} el.play().catch(() => {}); };
+        if (el.src.endsWith(url) || el.src === new URL(url, location.href).href) seekPlay();
+        else {
+          el.src = url;
+          el.addEventListener("loadedmetadata", seekPlay, { once: true });
+          el.load();
+        }
+        if (this._onMeta) this._onMeta(this._syncMeta(t, pt));
+      };
+      load();
+      // поддрерживаем синхрон: дрейф > 0.9 c → догоняем; трек кончился → пересчитываем из epoch
+      this._syncTimer = setInterval(() => {
+        const el = this._el;
+        if (!el || el.paused) return;
+        const pt = this._syncPoint(tracks);
+        if (!pt) return;
+        if (pt.i !== this._index) { this._index = pt.i; load(); return; }
+        if (Math.abs(el.currentTime - pt.off) > 0.9) { try { el.currentTime = pt.off; } catch (_) {} }
+      }, 4000);
+      return true;
+    }
+
+    _syncMeta(t, pt) {
+      const tags = t._tags || {};
+      return {
+        title: tags.title || t.title || RadioAudio.fileName(t.src),
+        artist: tags.artist || t.artist || "",
+        synced: true,
+        total: pt.total
+      };
     }
 
     stop() {
       this.stopEngine();
       if (this._el) { try { this._el.pause(); this._el.removeAttribute("src"); this._el.load(); } catch (_) {} }
+      clearInterval(this._syncTimer);
+      this._synced = false;
       this._playlist = [];
       this.mode = null;
       this.station = null;

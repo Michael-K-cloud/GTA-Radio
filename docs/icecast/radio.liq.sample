@@ -1,0 +1,43 @@
+# Liquidsoap: автодиджей для станций GTA RADIO.
+# Положи в /etc/liquidsoap/radio.liq, включи сервис liquidsoap@radio.
+# Каждая mk(...) = один маунт icecast = одна станция сайта.
+# Папки с mp3: /srv/radio/<имя>/ — раскладывай треки туда, плейлист перечитается сам.
+
+set("log.file.path", "/var/log/liquidsoap/radio.log")
+set("server.telnet", true)
+set("server.telnet.port", 1234)
+
+def mk(id, dir) =
+  ignore(
+    output.icecast(
+      %mp3(bitrate=192, stereo=true),
+      host="127.0.0.1",
+      port=8000,
+      password="CHANGE_ME_SOURCE",
+      mount="/" ^ id,
+      name="GTA RADIO · " ^ id,
+      genre="game radio",
+      mksafe(
+        normalize(
+          replaygain(
+            playlist(mode="randomize", reload=3600, dir)
+          )
+        )
+      )
+    )
+  )
+end
+
+# --- GTA V ---
+mk("v/rock",  "/srv/radio/v-rock")
+mk("v/surf",  "/srv/radio/v-surf")
+# --- GTA IV ---
+mk("iv/liberty", "/srv/radio/iv-liberty")
+# --- San Andreas ---
+mk("sa/rls",  "/srv/radio/sa-rls")
+mk("sa/bounce", "/srv/radio/sa-bounce")
+# --- Vice City / III ---
+mk("vc/flash", "/srv/radio/vc-flash")
+mk("iii/rise", "/srv/radio/iii-rise")
+
+# Добавляй станции одной строкой: mk("игра/станция", "/srv/radio/папка")
