@@ -94,13 +94,13 @@ img,svg{display:block}
   transform:perspective(700px) rotateX(6deg);
 }
 .title .l1,.title .l2{display:block}
-.title .l1{font-size:.44em;letter-spacing:.42em;color:#cfd8e3;text-shadow:0 2px 10px rgba(0,0,0,.8)}
-.title .l2{
+.title .l2{font-size:.44em;letter-spacing:.42em;color:#cfd8e3;text-shadow:0 2px 10px rgba(0,0,0,.8)}
+.title .l1{
   background:linear-gradient(180deg,#ffffff 0%,#e6edf6 38%,#9fb0c2 52%,#f2f6fb 62%,#c6d1dd 100%);
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
   filter:drop-shadow(0 6px 18px rgba(0,0,0,.75));
 }
-.title .l2{animation:glowPulse 5.5s ease-in-out infinite}
+.title .l1{animation:glowPulse 5.5s ease-in-out infinite}
 @keyframes glowPulse{
   0%,100%{filter:drop-shadow(0 6px 18px rgba(0,0,0,.75)) drop-shadow(0 0 26px rgba(127,212,255,.10))}
   50%{filter:drop-shadow(0 6px 18px rgba(0,0,0,.75)) drop-shadow(0 0 46px rgba(127,212,255,.30))}
